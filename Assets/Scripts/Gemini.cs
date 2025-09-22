@@ -1,116 +1,67 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class Gemini : MonoBehaviour
 {
     public static Gemini Instance;
 
-    private readonly HttpClient _httpClient = new HttpClient();
     private readonly string _apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+
     private readonly string _apiKey = "AIzaSyBZQe7MjsaQT70LEJNKl_Et8RCQJ57E-04";
 
     private CurrentWeapon[] currentWeapons = new CurrentWeapon[]
     {
-        new CurrentWeapon
-        (
-            1,
-            "Cung thường",
+        new CurrentWeapon(1,"Cung thường",
             "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757386421/Bow_qccbud.png",
             "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757473587/Arrow_ydmjzs.png",
-            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757480002/effect1_pnlbaf.png",
-            false
-        ),
-        new CurrentWeapon
-        (
-            2,
-            "Cung lửa",
+            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757480002/effect1_pnlbaf.png", false),
+        new CurrentWeapon(2,"Cung lửa",
             "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757386418/FireBow_sxs3jb.png",
             "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757507666/Arrow_rsbtzz.png",
-            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757481121/explose_fnf7rz.png",
-            false
-        ),
-        new CurrentWeapon
-        (
-            3,
-            "Kiếm vàng",
+            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757481121/explose_fnf7rz.png", false),
+        new CurrentWeapon(3,"Kiếm vàng",
             "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757908601/Sword_xpn3er.png",
             "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757507666/Arrow_rsbtzz.png",
-            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757480002/effect1_pnlbaf.png",
-            true
-        ),
+            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757480002/effect1_pnlbaf.png", true),
     };
 
-    [System.Serializable]
-    public class TextWrapper
-    {
-        public string text;
-    }
+    [Serializable] public class TextWrapper { public string text; }
+    [Serializable] public class PartsWrapper { public TextWrapper[] parts; }
+    [Serializable] public class ContentWrapper { public PartsWrapper content; }
+    [Serializable] public class CandidateWrapper { public ContentWrapper[] candidates; }
 
-    [System.Serializable]
-    public class PartsWrapper
-    {
-        public TextWrapper[] parts;
-    }
-
-    [System.Serializable]
-    public class ContentWrapper
-    {
-        public PartsWrapper content;
-    }
-
-    [System.Serializable]
-    public class CandidateWrapper
-    {
-        public ContentWrapper[] candidates;
-    }
-
-    public class MessageType
-    {
-        public string role { get; set; }
-        public Part[] parts { get; set; }
-    }
-
-    public class Part
-    {
-        public string text { get; set; }
-    }
-
+    [Serializable]
     public class ContentValidationResponse
     {
-        public int WeaponID { get; set; }
-        public string Reason { get; set; }
+        public int weaponID;
+        public string reason;
     }
 
-    public async Task<ContentValidationResponse> ValidateContentAsync(string content)
+    public void ValidateContent(string prompt, Action<ContentValidationResponse> onResult, Action<string> onError)
+    {
+        StartCoroutine(ValidateCoroutine(prompt, onResult, onError));
+    }
+
+    private IEnumerator ValidateCoroutine(string content, Action<ContentValidationResponse> onResult, Action<string> onError)
     {
         var weaponsList = string.Join(", ", currentWeapons.Select(w => $"{w.id}. {w.name}"));
 
         var messages = new[]
         {
-                new MessageType
-                {
-                    role = "user",
-                    parts = new[]
-                        {
-                            new Part
-                            {
-                                text = $"Hãy chọn id của weapon phù hợp nhất với prompt người dùng. Danh sách weapon: {weaponsList}. Prompt: {content}"
-                            }
-                        }
-                }
-            };
+            new {
+                role = "user",
+                parts = new[]{ new { text = $"Hãy chọn id của weapon phù hợp nhất. Danh sách: {weaponsList}. Prompt: {content}" } }
+            }
+        };
 
+        Debug.Log("messages: " + messages);
         var requestBody = new
         {
-            contents = messages.Select(m => new
-            {
-                role = m.role,
-                parts = m.parts.Select(p => new { text = p.text }).ToArray()
-            }).ToArray(),
+            contents = messages,
             generationConfig = new
             {
                 response_mime_type = "application/json",
@@ -119,43 +70,63 @@ public class Gemini : MonoBehaviour
                     type = "object",
                     properties = new
                     {
-                        weaponID = new
-                        {
-                            type = "integer",
-                            description = $"Số id (1..{currentWeapons.Length}) của weapon phù hợp nhất với prompt."
-                        },
-                        reason = new
-                        {
-                            type = "string",
-                            description = "Giải thích ngắn gọn lý do vì sao chọn weapon đó."
-                        }
+                        weaponID = new { type = "integer", description = "ID weapon phù hợp nhất" },
+                        reason = new { type = "string", description = "Lý do chọn" }
                     },
                     required = new[] { "weaponID", "reason" }
                 }
             }
         };
 
-        var url = $"{_apiUrl}?key={_apiKey}";
-        var json = JsonUtility.ToJson(requestBody);
-        var contentData = new StringContent(json, Encoding.UTF8, "application/json");
+        Debug.Log("requestBody: " + requestBody);
+        string json = JsonUtility.ToJson(requestBody);
 
-        var response = await _httpClient.PostAsync(url, contentData);
+        Debug.Log("json: " + json);
 
-        if (!response.IsSuccessStatusCode)
+        using (UnityWebRequest www = new UnityWebRequest($"{_apiUrl}?key={_apiKey}", "POST"))
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Gemini API error: {errorContent}");
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
+            www.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            www.downloadHandler = new DownloadHandlerBuffer();
+            www.SetRequestHeader("Content-Type", "application/json");
+
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                string errorMsg = $"Network/API Error: {www.error}\nResponse: {www.downloadHandler.text}";
+                Debug.LogError(errorMsg);
+                onError?.Invoke(errorMsg);
+            }
+            else
+            {
+                try
+                {
+                    var responseString = www.downloadHandler.text;
+
+                    CandidateWrapper wrapper = JsonUtility.FromJson<CandidateWrapper>(responseString);
+                    if (wrapper == null || wrapper.candidates == null || wrapper.candidates.Length == 0)
+                    {
+                        throw new Exception("Response không có candidates hợp lệ!");
+                    }
+
+                    string textJson = wrapper.candidates[0].content.parts[0].text;
+                    ContentValidationResponse result = JsonUtility.FromJson<ContentValidationResponse>(textJson);
+
+                    if (result == null)
+                    {
+                        throw new Exception("Parse ContentValidationResponse thất bại!");
+                    }
+
+                    onResult?.Invoke(result);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError("Parse Error: " + ex.Message);
+                    onError?.Invoke("Parse Error: " + ex.Message);
+                }
+            }
         }
-
-        var responseString = await response.Content.ReadAsStringAsync();
-
-        CandidateWrapper wrapper = JsonUtility.FromJson<CandidateWrapper>(responseString);
-
-        string textJson = wrapper.candidates[0].content.parts[0].text;
-
-        ContentValidationResponse result = JsonUtility.FromJson<ContentValidationResponse>(textJson);
-
-        return result;
     }
 
     private void Awake()
@@ -168,17 +139,5 @@ public class Gemini : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
-    }
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -91,6 +92,19 @@ public class NpcController : MonoBehaviour
     private void HandleSubmitBtnClicked()
     {
         playerScript.setCanControl(true);
+
+        Gemini.Instance.ValidateContent(
+            "Tôi muốn vũ khí lửa",
+            (result) =>
+            {
+                Debug.Log($"✅ Weapon ID: {result.weaponID}, Reason: {result.reason}");
+            },
+            (error) =>
+            {
+                Debug.LogError($"❌ Lỗi khi gọi Gemini: {error}");
+            }
+        );
+
         EndInteract();
     }
 
