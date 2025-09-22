@@ -18,7 +18,20 @@ public class CurrentWeapon
         this.isMelee = isMelee;
         Instance = this;
     }
+
+    public CurrentWeapon(int id, string name, string imgeUrl, string hitUrl, string effectUrl, bool isMelee)
+    {
+        this.id = id;
+        this.name = name;
+        this.imgeUrl = imgeUrl;
+        this.hitUrl = hitUrl;
+        this.effectUrl = effectUrl;
+        this.isMelee = isMelee;
+        Instance = this;
+    }
+
     public int id;
+    public string name;
     public string imgeUrl;
     public string hitUrl;
     public string effectUrl;
