@@ -19,12 +19,15 @@ public class Player : MonoBehaviour
     private float dashingCoolDown = 1f;
     private TrailRenderer trail;
 
+    private bool canControl;
+
     [SerializeField] private Image imageSkillCooldown;
 
     [SerializeField] private Animator animator;
 
     void Awake()
     {
+        canControl = true;
         inputActions = new InputActions();
         maincamera = Camera.main;
         rb = GetComponent<Rigidbody2D>();
@@ -40,13 +43,12 @@ public class Player : MonoBehaviour
 
     void OnEnable()
     {
+
         // Enable action map "Player"
         inputActions.Player.Enable();
         inputActions.Player.Dash.performed += OnDash;
-        // Đăng ký lắng nghe Move
-        OnMove();
-
-        
+        inputActions.Player.Move.performed += OnMove;
+        inputActions.Player.Move.canceled += OnCancelMove;
     }
 
     void OnDisable()
@@ -55,19 +57,23 @@ public class Player : MonoBehaviour
         inputActions.Player.Disable();
     }
 
-    private void OnMove()
+    private void OnMove(InputAction.CallbackContext ctx)
     {
         //if dashing, player can't move
-        if (!isDashing)
+        if (!isDashing && canControl)
         {
-            inputActions.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
-            inputActions.Player.Move.canceled += ctx => moveInput = Vector2.zero;
+            moveInput = ctx.ReadValue<Vector2>();
         }
+    }
+
+    private void OnCancelMove(InputAction.CallbackContext ctx)
+    {
+        moveInput = Vector2.zero;
     }
 
     public void OnDash(InputAction.CallbackContext ctx) 
     {
-        if(canDash)
+        if(canDash && canControl)
         {
             imageSkillCooldown.fillAmount = 0.0f;
             StartCoroutine(Dash());
@@ -147,5 +153,10 @@ public class Player : MonoBehaviour
         {
             GameManager.Instance.CallWeapon(2);
         }
+    }
+
+    public void setCanControl(bool canControl)
+    {
+        this.canControl = canControl;
     }
 }
