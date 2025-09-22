@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -45,6 +43,30 @@ public class Gemini : MonoBehaviour
             true
         ),
     };
+
+    [System.Serializable]
+    public class TextWrapper
+    {
+        public string text;
+    }
+
+    [System.Serializable]
+    public class PartsWrapper
+    {
+        public TextWrapper[] parts;
+    }
+
+    [System.Serializable]
+    public class ContentWrapper
+    {
+        public PartsWrapper content;
+    }
+
+    [System.Serializable]
+    public class CandidateWrapper
+    {
+        public ContentWrapper[] candidates;
+    }
 
     public class MessageType
     {
@@ -114,7 +136,7 @@ public class Gemini : MonoBehaviour
         };
 
         var url = $"{_apiUrl}?key={_apiKey}";
-        var json = JsonConvert.SerializeObject(requestBody);
+        var json = JsonUtility.ToJson(requestBody);
         var contentData = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(url, contentData);
@@ -127,18 +149,11 @@ public class Gemini : MonoBehaviour
 
         var responseString = await response.Content.ReadAsStringAsync();
 
-        var root = JObject.Parse(responseString);
+        CandidateWrapper wrapper = JsonUtility.FromJson<CandidateWrapper>(responseString);
 
-        var textJson = root["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
+        string textJson = wrapper.candidates[0].content.parts[0].text;
 
-        var result = JsonConvert.DeserializeObject<ContentValidationResponse>(
-            textJson,
-            new JsonSerializerSettings
-            {
-                MissingMemberHandling = MissingMemberHandling.Ignore,
-                NullValueHandling = NullValueHandling.Ignore
-            }
-        );
+        ContentValidationResponse result = JsonUtility.FromJson<ContentValidationResponse>(textJson);
 
         return result;
     }
