@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     private SpriteRenderer spriteWeaponRenderer;
 
     [SerializeField] private Transform spawnPoint;
+    [SerializeField] private Transform hitPos;
     [SerializeField] private List<Image> weaponList;
     [SerializeField] List<GameObject> weaponBG;
     [SerializeField] Animator animator;
@@ -44,11 +45,15 @@ public class GameManager : MonoBehaviour
     // Data sau khi load sprite về
     private WeaponObject[] weaponObjects = new WeaponObject[3];
 
+    private WeaponObject newWeaponGen;
+
     private NpcController npcController;
+
+    public Action getWeapon;
 
     private void Awake()
     {
-        npcController = FindFirstObjectByType<NpcController>();
+        
 
         if (Instance != null)
         {
@@ -58,12 +63,13 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
         }
+        npcController = FindFirstObjectByType<NpcController>();
         spriteWeaponRenderer = weapon.GetComponent<SpriteRenderer>();
 
-        currentWeapons[0] = new CurrentWeapon(1, "Kiếm lửa thường",
-            "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758528470/0d04c180-3daa-4c62-8901-6bf5d0533964.png",
-            "",
-            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757481121/explose_fnf7rz.png", true);
+        currentWeapons[0] = new CurrentWeapon(39, "Cung Hỏa thánh",
+            "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758538354/9f94361c-301a-4070-98ee-3c237de0cefb.png",
+            "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758538507/download_5_bai5s3.png",
+            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757480002/effect1_pnlbaf.png", false);
 
         for (int i = 0; i < weaponObjects.Length; i++)
         {
@@ -112,7 +118,10 @@ public class GameManager : MonoBehaviour
 
             // Thêm các Coroutine vào danh sách
             coroutines.Add(StartCoroutine(LoadSpriteWeapon(currentWeapons[i].imgeUrl, weaponObjects[i], weaponList[i], true)));
-            coroutines.Add(StartCoroutine(LoadSpriteHit(currentWeapons[i].hitUrl, weaponObjects[i])));
+            if (!weaponObjects[i].isMelee)
+            {
+                coroutines.Add(StartCoroutine(LoadSpriteHit(currentWeapons[i].hitUrl, weaponObjects[i])));
+            }
             coroutines.Add(StartCoroutine(LoadSpriteEffect(currentWeapons[i].effectUrl, weaponObjects[i])));
         }
 
@@ -129,14 +138,15 @@ public class GameManager : MonoBehaviour
 
     public void CallWeapon(int slot)
     {
-        if (currentWeapons[slot] == null)
+        if (weaponObjects[slot] == null)
         {
             return;
         }
 
         WeaponObject.Instance = weaponObjects[slot];
+        Debug.Log("Call weapon: " + WeaponObject.Instance.id);
 
-        for (int i = 0; i < currentWeapons.Length; i++)
+        for (int i = 0; i < weaponObjects.Length; i++)
         {
             weaponList[i].color = new Color(weaponList[i].color.r, weaponList[i].color.g, weaponList[i].color.b, 0.5f);
             weaponBG[i].SetActive(false);
@@ -147,18 +157,23 @@ public class GameManager : MonoBehaviour
 
         //Render Weapon
         spriteWeaponRenderer.sprite = WeaponObject.Instance.weaponSprite;
+        // Lưu lại world position ban đầu của child
+        Vector3 worldPos = hitPos.position;
 
         float desiredHeight = WeaponObject.Instance.isMelee ? 0.25f : 0.5f;
         float spriteHeight = spriteWeaponRenderer.sprite.bounds.size.y;
         float scale = desiredHeight / spriteHeight;
         spriteWeaponRenderer.transform.localScale = new Vector3(-scale, scale, 1);
 
+        // Cập nhật lại localPosition của child để world position không đổi
+        hitPos.localPosition = spriteWeaponRenderer.transform.InverseTransformPoint(worldPos);
+
         //Render RangeHit
         SpriteRenderer spriteHit = hitPrefab.GetComponent<SpriteRenderer>();
         spriteHit.sprite = WeaponObject.Instance.hitSprite;
         //spriteHeight = spriteHit.bounds.size.y;
         //scale = desiredHeight / spriteHeight;
-        spriteHit.transform.localScale = new Vector3(0.05f, 0.05f, 0.05f);
+        spriteHit.transform.localScale = new Vector3(-0.1f, 0.1f, 1);
     }
 
     // Update is called once per frame
@@ -178,7 +193,7 @@ public class GameManager : MonoBehaviour
                 Texture2D texture = DownloadHandlerTexture.GetContent(uwr);
 
                 Sprite newSprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
-                                                 new Vector2(1.1f, 0.5f));
+                                                 new Vector2(weaponObject.isMelee?1.1f:0.8f, 0.5f));
 
                 Debug.Log("Weapon null: " + weaponObject == null);
 
@@ -209,7 +224,7 @@ public class GameManager : MonoBehaviour
                 Texture2D texture = DownloadHandlerTexture.GetContent(uwr);
 
                 Sprite newSprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
-                                                 new Vector2(0.5f, 0.5f));
+                                                 new Vector2(0.7f, 0.5f));
 
                 weaponObject.hitSprite = newSprite;
             }
@@ -268,37 +283,41 @@ public class GameManager : MonoBehaviour
 
     private void HandleAlreadyChoseWeapon()
     {
-        int index = numWeapons;
+        CurrentWeapon temp = Gemini.Instance.CurrentWeapon;
 
-        if (numWeapons == 3)
+        newWeaponGen = new WeaponObject();
+        newWeaponGen.id = temp.id;
+        newWeaponGen.isMelee = temp.isMelee;
+        StartCoroutine(LoadSpriteWeapon(temp.imgeUrl, newWeaponGen, null, false));
+        if (!newWeaponGen.isMelee)
         {
-            for (int i = 0; i < 3; i++)
-            {
-                if (currentWeapons[i].id == WeaponObject.Instance.id)
-                {
-                    index = i;
-                }
-            }
+            StartCoroutine(LoadSpriteHit(temp.hitUrl, newWeaponGen));
         }
-        else
-        {
-            numWeapons++;
-        }
-        currentWeapons[index] = Gemini.Instance.CurrentWeapon;
-
-        Debug.Log("Current weapon: " + currentWeapons[index].name);
-        Debug.Log("index: " + index);
-        weaponObjects[index] = new WeaponObject();
-        weaponObjects[index].id = currentWeapons[index].id;
-        weaponObjects[index].isMelee = currentWeapons[index].isMelee;
-        StartCoroutine(LoadSpriteWeapon(currentWeapons[index].imgeUrl, weaponObjects[index], weaponList[index], false));
-        StartCoroutine(LoadSpriteHit(currentWeapons[index].hitUrl, weaponObjects[index]));
-        StartCoroutine(LoadSpriteEffect(currentWeapons[index].effectUrl, weaponObjects[index]));
-
+        StartCoroutine(LoadSpriteEffect(temp.effectUrl, newWeaponGen));
+        alreadyWeapon?.Invoke();
     }
 
     private void PlayerGetWeapon()
     {
-        weaponList[numWeapons - 1].sprite = weaponObjects[numWeapons - 1].weaponSprite;
+        int index = numWeapons;
+        if (numWeapons == 3)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                if (weaponObjects[i].id == WeaponObject.Instance.id)
+                { 
+                    index = i;
+                    break;
+                }
+            }
+        } 
+        else
+        {
+            numWeapons++;
+        }
+        weaponObjects[index] = newWeaponGen;
+        weaponList[index].sprite = newWeaponGen.weaponSprite;
+        newWeaponGen = null;
+        CallWeapon(index);
     }
 }

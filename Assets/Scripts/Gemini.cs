@@ -11,9 +11,9 @@ public class Gemini : MonoBehaviour
 
     public Action alreadyChoseWeapon;
 
-    private readonly string _apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+    private readonly string _apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
-    private readonly string _apiKey = "AIzaSyBZQe7MjsaQT70LEJNKl_Et8RCQJ57E-04";
+    private readonly string _apiKey = "AIzaSyAS4FQdy13XFV2PHt5Px1Agk6hENVlcQ80";
 
     private CurrentWeapon[] currentWeapons = new CurrentWeapon[]
     {

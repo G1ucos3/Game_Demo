@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Networking;
 using UnityEngine.UI;
+
 
 
 public class NpcController : MonoBehaviour
@@ -26,10 +29,14 @@ public class NpcController : MonoBehaviour
     [SerializeField]
     Button cancel;
 
-    private GameManager managerObj;
+    [SerializeField]
+    private Sprite[] frames;
 
+    private GameManager managerObj;
+    private Coroutine animationCoroutine;
     private bool allowInteract = false;
-    private bool isWaitingGetWeapon = false; 
+    private bool isWaitingGetWeapon = false;
+    private bool isWaitingGenWeapon = false;
 
     Player playerScript;
 
@@ -37,12 +44,11 @@ public class NpcController : MonoBehaviour
 
     void Awake()
     {
-        managerObj = FindFirstObjectByType<GameManager>();
     }
 
     void OnEnable()
     {
-        managerObj.alreadyWeapon += WattingPlayerGetWeapon;
+        
     }
 
     void Start()
@@ -51,29 +57,27 @@ public class NpcController : MonoBehaviour
         playerScript = playerObj.GetComponent<Player>();
         submit.onClick.AddListener(HandleSubmitBtnClicked);
         cancel.onClick.AddListener(HandleCancelBtnClicked);
-
+        GameManager.Instance.alreadyWeapon += WattingPlayerGetWeapon;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Keyboard.current.eKey.isPressed)
+        if (Keyboard.current.eKey.isPressed && allowInteract)
         {
             if (isWaitingGetWeapon)
             {
-                EndInteract();
                 isWaitingGetWeapon = false;
                 playerGetWeapon?.Invoke();
+                EndInteract();
             }
-            else if (allowInteract)
+            else
             {
                 dialog.gameObject.SetActive(false);
                 inputPrompt.gameObject.SetActive(true);
                 cancel.gameObject.SetActive(true);
-                allowInteract = false;
                 playerScript.setCanControl(false);
             }
-            
         }
 
         if (inputPrompt.gameObject.activeSelf)
@@ -81,6 +85,10 @@ public class NpcController : MonoBehaviour
             if (inputPrompt.text != "")
             {
                 submit.gameObject.SetActive(true);
+                if (Keyboard.current.enterKey.wasPressedThisFrame)
+                {
+                    HandleSubmitBtnClicked();
+                }
             }
             else
             {
@@ -93,9 +101,20 @@ public class NpcController : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            // Add your interaction logic here
             allowInteract = true;
-            dialog.gameObject.SetActive(true);
+            // Add your interaction logic here
+            if (isWaitingGetWeapon)
+            {
+                getweapon.gameObject.SetActive(true);
+            }
+            else if (isWaitingGenWeapon)
+            {
+                waiting.gameObject.SetActive(true);
+            }
+            else
+            {
+                dialog.gameObject.SetActive(true);
+            }
         }
     }
 
@@ -116,7 +135,11 @@ public class NpcController : MonoBehaviour
     private void HandleSubmitBtnClicked()
     {
         playerScript.setCanControl(true);
-
+        cancel.gameObject.SetActive(false);
+        submit.gameObject.SetActive(false);
+        inputPrompt.gameObject.SetActive(false);
+        waiting.gameObject.SetActive(true);
+        isWaitingGenWeapon = true;
         Gemini.Instance.ValidateContent(
             inputPrompt.text,
             (result) =>
@@ -128,8 +151,7 @@ public class NpcController : MonoBehaviour
                 Debug.LogError($"❌ Lỗi khi gọi Gemini: {error}");
             }
         );
-
-        WattingPlayerGetWeapon();
+        animationCoroutine = StartCoroutine(PlayAnimation());
     }
 
     private void EndInteract()
@@ -141,12 +163,41 @@ public class NpcController : MonoBehaviour
         cancel.gameObject.SetActive(false);
         allowInteract = false;
         getweapon.gameObject.SetActive(false);
+        waiting.gameObject.SetActive(false);
     }
 
     private void WattingPlayerGetWeapon()
     {
-        waiting.gameObject.SetActive(false);
-        getweapon.gameObject.SetActive(true);
+        Debug.Log("WattingPlayerGetWeapon");
+  
+        isWaitingGenWeapon = false;
+
+        if (allowInteract)
+        {
+            waiting.gameObject.SetActive(false);
+            getweapon.gameObject.SetActive(true);
+        }
+
         isWaitingGetWeapon = true;
+        StopCoroutine(animationCoroutine);
+    }
+
+    private IEnumerator PlayAnimation()
+    {
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        int currentFrame = 0;
+        float frameRate = 0.1f; // Thời gian giữa các khung hình
+        float timer = 0f;
+        while (true)
+        {
+            timer += Time.deltaTime;
+            if (timer >= frameRate)
+            {
+                timer -= frameRate;
+                currentFrame = (currentFrame + 1) % frames.Length; // Vòng lặp qua các khung hình
+                sr.sprite = frames[currentFrame];
+            }
+            yield return null;
+        }
     }
 }
