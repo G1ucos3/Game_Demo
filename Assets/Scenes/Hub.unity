@@ -613,6 +613,7 @@ GameObject:
   - component: {fileID: 250009073}
   - component: {fileID: 250009072}
   - component: {fileID: 250009075}
+  - component: {fileID: 250009076}
   m_Layer: 0
   m_Name: NPC
   m_TagString: Untagged
@@ -746,6 +747,18 @@ MonoBehaviour:
   inputPrompt: {fileID: 1903612976}
   submit: {fileID: 1294098100}
   cancel: {fileID: 1701275231}
+--- !u!114 &250009076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 250009071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97e78184f3f6d79429dfdf5146a1b6b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Gemini
 --- !u!1 &396204099
 GameObject:
   m_ObjectHideFlags: 0

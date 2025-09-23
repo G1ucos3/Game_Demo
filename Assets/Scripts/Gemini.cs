@@ -29,6 +29,55 @@ public class Gemini : MonoBehaviour
             "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757480002/effect1_pnlbaf.png", true),
     };
 
+    [Serializable]
+    public class PartReq
+    {
+        public string text;
+    }
+
+    [Serializable]
+    public class MessageReq
+    {
+        public string role;
+        public PartReq[] parts;
+    }
+
+    [Serializable]
+    public class PropertyDetail
+    {
+        public string type;
+        public string description;
+    }
+
+    [Serializable]
+    public class PropertyDef
+    {
+        public PropertyDetail weaponID;
+        public PropertyDetail reason;
+    }
+
+    [Serializable]
+    public class ResponseSchema
+    {
+        public string type;
+        public PropertyDef properties;
+        public string[] required;
+    }
+
+    [Serializable]
+    public class GenerationConfig
+    {
+        public string response_mime_type;
+        public ResponseSchema response_schema;
+    }
+
+    [Serializable]
+    public class RequestBody
+    {
+        public MessageReq[] contents;
+        public GenerationConfig generationConfig;
+    }
+
     [Serializable] public class TextWrapper { public string text; }
     [Serializable] public class PartsWrapper { public TextWrapper[] parts; }
     [Serializable] public class ContentWrapper { public PartsWrapper content; }
@@ -50,38 +99,39 @@ public class Gemini : MonoBehaviour
     {
         var weaponsList = string.Join(", ", currentWeapons.Select(w => $"{w.id}. {w.name}"));
 
-        var messages = new[]
+        var msg = new MessageReq
         {
-            new {
-                role = "user",
-                parts = new[]{ new { text = $"Hãy chọn id của weapon phù hợp nhất. Danh sách: {weaponsList}. Prompt: {content}" } }
-            }
+            role = "user",
+            parts = new PartReq[]
+    {
+        new PartReq
+        {
+            text = $"Hãy chọn id của weapon phù hợp nhất. Danh sách: {weaponsList}. Prompt: {content}"
+        }
+    }
         };
 
-        Debug.Log("messages: " + messages);
-        var requestBody = new
+        var reqBody = new RequestBody
         {
-            contents = messages,
-            generationConfig = new
+            contents = new[] { msg },
+            generationConfig = new GenerationConfig
             {
                 response_mime_type = "application/json",
-                response_schema = new
+                response_schema = new ResponseSchema
                 {
                     type = "object",
-                    properties = new
+                    properties = new PropertyDef
                     {
-                        weaponID = new { type = "integer", description = "ID weapon phù hợp nhất" },
-                        reason = new { type = "string", description = "Lý do chọn" }
+                        weaponID = new PropertyDetail { type = "integer", description = "ID weapon phù hợp nhất" },
+                        reason = new PropertyDetail { type = "string", description = "Lý do chọn" }
                     },
                     required = new[] { "weaponID", "reason" }
                 }
             }
         };
 
-        Debug.Log("requestBody: " + requestBody);
-        string json = JsonUtility.ToJson(requestBody);
-
-        Debug.Log("json: " + json);
+        string json = JsonUtility.ToJson(reqBody);
+        Debug.Log("📤 JSON gửi đi:\n" + json);
 
         using (UnityWebRequest www = new UnityWebRequest($"{_apiUrl}?key={_apiKey}", "POST"))
         {
