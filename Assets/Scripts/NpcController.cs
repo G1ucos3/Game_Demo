@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -11,6 +12,12 @@ public class NpcController : MonoBehaviour
     Image dialog;
 
     [SerializeField]
+    Image waiting;
+
+    [SerializeField]
+    Image getweapon;
+
+    [SerializeField]
     TMP_InputField inputPrompt;
 
     [SerializeField]
@@ -19,10 +26,24 @@ public class NpcController : MonoBehaviour
     [SerializeField]
     Button cancel;
 
+    private GameManager managerObj;
 
     private bool allowInteract = false;
+    private bool isWaitingGetWeapon = false; 
 
     Player playerScript;
+
+    public Action playerGetWeapon;
+
+    void Awake()
+    {
+        managerObj = FindFirstObjectByType<GameManager>();
+    }
+
+    void OnEnable()
+    {
+        managerObj.alreadyWeapon += WattingPlayerGetWeapon;
+    }
 
     void Start()
     {
@@ -38,8 +59,13 @@ public class NpcController : MonoBehaviour
     {
         if (Keyboard.current.eKey.isPressed)
         {
-            Debug.Log("Đang giữ phím E");
-            if (allowInteract)
+            if (isWaitingGetWeapon)
+            {
+                EndInteract();
+                isWaitingGetWeapon = false;
+                playerGetWeapon?.Invoke();
+            }
+            else if (allowInteract)
             {
                 dialog.gameObject.SetActive(false);
                 inputPrompt.gameObject.SetActive(true);
@@ -47,6 +73,7 @@ public class NpcController : MonoBehaviour
                 allowInteract = false;
                 playerScript.setCanControl(false);
             }
+            
         }
 
         if (inputPrompt.gameObject.activeSelf)
@@ -66,7 +93,6 @@ public class NpcController : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("Player entered NPC trigger area.");
             // Add your interaction logic here
             allowInteract = true;
             dialog.gameObject.SetActive(true);
@@ -77,8 +103,6 @@ public class NpcController : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("Player exited NPC trigger area.");
-
             EndInteract();
         }
     }
@@ -94,7 +118,7 @@ public class NpcController : MonoBehaviour
         playerScript.setCanControl(true);
 
         Gemini.Instance.ValidateContent(
-            "Tôi muốn vũ khí lửa",
+            inputPrompt.text,
             (result) =>
             {
                 Debug.Log($"✅ Weapon ID: {result.weaponID}, Reason: {result.reason}");
@@ -105,7 +129,7 @@ public class NpcController : MonoBehaviour
             }
         );
 
-        EndInteract();
+        WattingPlayerGetWeapon();
     }
 
     private void EndInteract()
@@ -116,5 +140,13 @@ public class NpcController : MonoBehaviour
         submit.gameObject.SetActive(false);
         cancel.gameObject.SetActive(false);
         allowInteract = false;
+        getweapon.gameObject.SetActive(false);
+    }
+
+    private void WattingPlayerGetWeapon()
+    {
+        waiting.gameObject.SetActive(false);
+        getweapon.gameObject.SetActive(true);
+        isWaitingGetWeapon = true;
     }
 }
