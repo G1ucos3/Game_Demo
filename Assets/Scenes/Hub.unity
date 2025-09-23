@@ -880,7 +880,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcController
   dialog: {fileID: 445087503}
-  waiting: {fileID: 0}
+  waiting: {fileID: 846324991}
+  getweapon: {fileID: 1596820961}
   inputPrompt: {fileID: 1903612976}
   submit: {fileID: 1294098100}
   cancel: {fileID: 1701275231}
@@ -3784,7 +3785,7 @@ GameObject:
   - component: {fileID: 1596820962}
   - component: {fileID: 1596820961}
   m_Layer: 5
-  m_Name: Image
+  m_Name: ImgGetWeapon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
