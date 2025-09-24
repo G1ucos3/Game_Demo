@@ -285,15 +285,28 @@ public class GameManager : MonoBehaviour
     {
         CurrentWeapon temp = Gemini.Instance.CurrentWeapon;
 
-        newWeaponGen = new WeaponObject();
-        newWeaponGen.id = temp.id;
-        newWeaponGen.isMelee = temp.isMelee;
-        StartCoroutine(LoadSpriteWeapon(temp.imgeUrl, newWeaponGen, null, false));
+        newWeaponGen = new WeaponObject
+        {
+            id = temp.id,
+            isMelee = temp.isMelee
+        };
+
+        StartCoroutine(HandleLoadSpriteAll(temp));
+    }
+
+    private IEnumerator HandleLoadSpriteAll(CurrentWeapon temp)
+    {
+        // Chạy và đợi từng coroutine hoàn tất
+        yield return StartCoroutine(LoadSpriteWeapon(temp.imgeUrl, newWeaponGen, null, false));
+
         if (!newWeaponGen.isMelee)
         {
-            StartCoroutine(LoadSpriteHit(temp.hitUrl, newWeaponGen));
+            yield return StartCoroutine(LoadSpriteHit(temp.hitUrl, newWeaponGen));
         }
-        StartCoroutine(LoadSpriteEffect(temp.effectUrl, newWeaponGen));
+
+        yield return StartCoroutine(LoadSpriteEffect(temp.effectUrl, newWeaponGen));
+
+        // Khi cả 3 xong thì invoke
         alreadyWeapon?.Invoke();
     }
 

@@ -52,7 +52,6 @@ public class Weapon : MonoBehaviour
                     {
                         return;
                     }
-                    Debug.Log("MeleeHit");
                     inAnimation = true;
                     totalAngleMelee = 0;
                     Quaternion rotation;
