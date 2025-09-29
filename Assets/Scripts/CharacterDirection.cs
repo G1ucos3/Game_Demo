@@ -11,14 +11,13 @@ public class CharacterDirection : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         maincamera = Camera.main;
-        
     }
 
     // Update is called once per frame
     void Update()
     {
         // Lấy vị trí con trỏ chuột trong không gian thế giới
-        Vector2 mousePos =Mouse.current.position.ReadValue();
+        Vector2 mousePos = Mouse.current.position.ReadValue();
         Vector3 mouseWorldPos = maincamera.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
 
         // Tính vector hướng từ nhân vật đến con trỏ chuột

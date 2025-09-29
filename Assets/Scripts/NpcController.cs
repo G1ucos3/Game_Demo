@@ -7,8 +7,6 @@ using UnityEngine.InputSystem;
 using UnityEngine.Networking;
 using UnityEngine.UI;
 
-
-
 public class NpcController : MonoBehaviour
 {
     [SerializeField]
@@ -32,15 +30,14 @@ public class NpcController : MonoBehaviour
     [SerializeField]
     private Sprite[] frames;
 
-    private GameManager managerObj;
     private Coroutine animationCoroutine;
     private bool allowInteract = false;
     private bool isWaitingGetWeapon = false;
     private bool isWaitingGenWeapon = false;
 
-    Player playerScript;
+    private Gemini gemini;
 
-    public Action playerGetWeapon;
+    Player playerScript;
 
     void Awake()
     {
@@ -48,7 +45,7 @@ public class NpcController : MonoBehaviour
 
     void OnEnable()
     {
-        
+
     }
 
     void Start()
@@ -57,7 +54,8 @@ public class NpcController : MonoBehaviour
         playerScript = playerObj.GetComponent<Player>();
         submit.onClick.AddListener(HandleSubmitBtnClicked);
         cancel.onClick.AddListener(HandleCancelBtnClicked);
-        GameManager.Instance.alreadyWeapon += WattingPlayerGetWeapon;
+        //GameManager.Instance.SubscribeNPCController(this);
+        gemini = FindFirstObjectByType<Gemini>();
     }
 
     // Update is called once per frame
@@ -68,7 +66,7 @@ public class NpcController : MonoBehaviour
             if (isWaitingGetWeapon)
             {
                 isWaitingGetWeapon = false;
-                playerGetWeapon?.Invoke();
+                GameManager.Instance.PlayerGetWeapon();
                 EndInteract();
             }
             else
@@ -140,7 +138,7 @@ public class NpcController : MonoBehaviour
         inputPrompt.gameObject.SetActive(false);
         waiting.gameObject.SetActive(true);
         isWaitingGenWeapon = true;
-        Gemini.Instance.ValidateContent(
+        gemini.ValidateContent(
             inputPrompt.text,
             (result) =>
             {
@@ -166,10 +164,10 @@ public class NpcController : MonoBehaviour
         waiting.gameObject.SetActive(false);
     }
 
-    private void WattingPlayerGetWeapon()
+    public void WattingPlayerGetWeapon()
     {
         Debug.Log("WattingPlayerGetWeapon");
-  
+
         isWaitingGenWeapon = false;
 
         if (allowInteract)

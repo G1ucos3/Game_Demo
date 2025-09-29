@@ -1,17 +1,8 @@
-﻿using System;
-using System.Collections;
-using System.Linq;
-using System.Text;
-using UnityEngine;
-using UnityEngine.Networking;
+﻿using UnityEngine;
 
-public class Gemini : MonoBehaviour
+public class TempData
 {
-    private readonly string _apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-
-    private readonly string _apiKey = "AIzaSyD8VCR-rjUC5fYUoUn-P8xbRqURxwaFULI";
-
-    private CurrentWeapon[] currentWeapons = new CurrentWeapon[]
+    public static CurrentWeapon[] currentWeapons = new CurrentWeapon[]
     {
         new CurrentWeapon(1,"Kiếm lửa thường",
             "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758528470/0d04c180-3daa-4c62-8901-6bf5d0533964.png",
@@ -323,164 +314,23 @@ public class Gemini : MonoBehaviour
             "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757480002/effect1_pnlbaf.png", true),
     };
 
-    public CurrentWeapon CurrentWeapon;
-
-    [Serializable]
-    public class PartReq
+    public static CurrentWeapon[] currentWeaponsInUse = new CurrentWeapon[]
     {
-        public string text;
-    }
+        new CurrentWeapon(1,"Kiếm lửa thường",
+            "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758528470/0d04c180-3daa-4c62-8901-6bf5d0533964.png",
+            "",
+            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757481121/explose_fnf7rz.png", true),
+        new CurrentWeapon(41,"Cung Thủy thánh",
+            "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758539206/download_7_divmby.png",
+            "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758539206/cung_7_kuvqcp.png",
+            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757480002/effect1_pnlbaf.png", false),
+        null
+    };
 
-    [Serializable]
-    public class MessageReq
+    public static WeaponObject[] weaponObjectsInUse = new WeaponObject[]
     {
-        public string role;
-        public PartReq[] parts;
-    }
-
-    [Serializable]
-    public class PropertyDetail
-    {
-        public string type;
-        public string description;
-    }
-
-    [Serializable]
-    public class PropertyDef
-    {
-        public PropertyDetail weaponID;
-        public PropertyDetail reason;
-    }
-
-    [Serializable]
-    public class ResponseSchema
-    {
-        public string type;
-        public PropertyDef properties;
-        public string[] required;
-    }
-
-    [Serializable]
-    public class GenerationConfig
-    {
-        public string response_mime_type;
-        public ResponseSchema response_schema;
-    }
-
-    [Serializable]
-    public class RequestBody
-    {
-        public MessageReq[] contents;
-        public GenerationConfig generationConfig;
-    }
-
-    [Serializable] public class TextWrapper { public string text; }
-    [Serializable] public class PartsWrapper { public TextWrapper[] parts; }
-    [Serializable] public class ContentWrapper { public PartsWrapper content; }
-    [Serializable] public class CandidateWrapper { public ContentWrapper[] candidates; }
-
-    [Serializable]
-    public class ContentValidationResponse
-    {
-        public int weaponID;
-        public string reason;
-    }
-
-    public void ValidateContent(string prompt, Action<ContentValidationResponse> onResult, Action<string> onError)
-    {
-        StartCoroutine(ValidateCoroutine(prompt, onResult, onError));
-    }
-
-    private IEnumerator ValidateCoroutine(string content, Action<ContentValidationResponse> onResult, Action<string> onError)
-    {
-        var weaponsList = string.Join(", ", currentWeapons.Select(w => $"{w.id}. {w.name}"));
-
-        var msg = new MessageReq
-        {
-            role = "user",
-            parts = new PartReq[]
-            {
-                new PartReq
-                {
-                    text = $"Hãy chọn id của weapon phù hợp nhất. Danh sách: {weaponsList}. Prompt: {content}"
-                }
-            }
-        };
-
-        var reqBody = new RequestBody
-        {
-            contents = new[] { msg },
-            generationConfig = new GenerationConfig
-            {
-                response_mime_type = "application/json",
-                response_schema = new ResponseSchema
-                {
-                    type = "object",
-                    properties = new PropertyDef
-                    {
-                        weaponID = new PropertyDetail { type = "integer", description = "ID weapon phù hợp nhất" },
-                        reason = new PropertyDetail { type = "string", description = "Lý do chọn" }
-                    },
-                    required = new[] { "weaponID", "reason" }
-                }
-            }
-        };
-
-        string json = JsonUtility.ToJson(reqBody);
-        Debug.Log("📤 JSON gửi đi:\n" + json);
-
-        using (UnityWebRequest www = new UnityWebRequest($"{_apiUrl}?key={_apiKey}", "POST"))
-        {
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
-            www.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            www.downloadHandler = new DownloadHandlerBuffer();
-            www.SetRequestHeader("Content-Type", "application/json");
-
-            yield return www.SendWebRequest();
-
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                string errorMsg = $"Network/API Error: {www.error}\nResponse: {www.downloadHandler.text}";
-                Debug.LogError(errorMsg);
-                onError?.Invoke(errorMsg);
-            }
-            else
-            {
-                try
-                {
-                    var responseString = www.downloadHandler.text;
-
-                    CandidateWrapper wrapper = JsonUtility.FromJson<CandidateWrapper>(responseString);
-                    if (wrapper == null || wrapper.candidates == null || wrapper.candidates.Length == 0)
-                    {
-                        throw new Exception("Response không có candidates hợp lệ!");
-                    }
-
-                    string textJson = wrapper.candidates[0].content.parts[0].text;
-                    ContentValidationResponse result = JsonUtility.FromJson<ContentValidationResponse>(textJson);
-
-                    CurrentWeapon = currentWeapons[result.weaponID - 1];
-
-                    if (result == null)
-                    {
-                        throw new Exception("Parse ContentValidationResponse thất bại!");
-                    }
-
-                    onResult?.Invoke(result);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError("Parse Error: " + ex.Message);
-                    onError?.Invoke("Parse Error: " + ex.Message);
-                }
-            }
-        }
-
-        GameManager.Instance.HandleAlreadyChoseWeapon();
-    }
-
-    void Start()
-    {
-        GameManager.Instance.SubscribeGeminiAI(this);
-    }
+        null,
+        null,
+        null
+    };
 }

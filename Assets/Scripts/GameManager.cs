@@ -14,7 +14,6 @@ public class GameManager : MonoBehaviour
     //[SerializeField]
     //private Button showBtn;
 
-    public Action alreadyWeapon;
     public static GameManager Instance { get; private set; }
 
     [SerializeField] GameObject Player;
@@ -49,21 +48,24 @@ public class GameManager : MonoBehaviour
 
     private NpcController npcController;
 
+    private Gemini gemini;
+
     public Action getWeapon;
 
     private void Awake()
     {
-        
-
-        if (Instance != null)
+        if (Instance != null && Instance != this)
         {
-            DestroyImmediate(gameObject);
+            // Nếu đã có một Instance, hủy đối tượng mới này.
+            Destroy(gameObject);
+            return;
         }
         else
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
-        npcController = FindFirstObjectByType<NpcController>();
+
         spriteWeaponRenderer = weapon.GetComponent<SpriteRenderer>();
 
         currentWeapons[0] = new CurrentWeapon(39, "Cung Hỏa thánh",
@@ -85,20 +87,14 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void OnEnable()
-    {
-        Gemini.Instance.alreadyChoseWeapon += HandleAlreadyChoseWeapon;
-        npcController.playerGetWeapon += PlayerGetWeapon;
-    }
-
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         Player.transform.localPosition = spawnPoint.position;
         Player.SetActive(false);
         weaponObjects = new WeaponObject[currentWeapons.Length];
-        //showBtn.onClick.AddListener(HandleShowBtnClicked);
 
+        //showBtn.onClick.AddListener(HandleShowBtnClicked);
         StartCoroutine(LoadAllSpritesAndCallWeapon());
     }
 
@@ -275,15 +271,16 @@ public class GameManager : MonoBehaviour
 
     public IEnumerator ChangeScene(string sceneName, float delayTime)
     {
+        npcController = null;
         animator.SetTrigger("End");
         yield return new WaitForSeconds(delayTime);
         SceneManager.LoadSceneAsync(sceneName);
         animator.SetTrigger("Start");
     }
 
-    private void HandleAlreadyChoseWeapon()
+    public void HandleAlreadyChoseWeapon()
     {
-        CurrentWeapon temp = Gemini.Instance.CurrentWeapon;
+        CurrentWeapon temp = gemini.CurrentWeapon;
 
         newWeaponGen = new WeaponObject
         {
@@ -307,10 +304,10 @@ public class GameManager : MonoBehaviour
         yield return StartCoroutine(LoadSpriteEffect(temp.effectUrl, newWeaponGen));
 
         // Khi cả 3 xong thì invoke
-        alreadyWeapon?.Invoke();
+        npcController.WattingPlayerGetWeapon();
     }
 
-    private void PlayerGetWeapon()
+    public void PlayerGetWeapon()
     {
         int index = numWeapons;
         if (numWeapons == 3)
@@ -332,5 +329,15 @@ public class GameManager : MonoBehaviour
         weaponList[index].sprite = newWeaponGen.weaponSprite;
         newWeaponGen = null;
         CallWeapon(index);
+    }
+
+    public void SubscribeNPCController(NpcController npcController)
+    {
+        Instance.npcController = npcController;
+    }
+
+    public void SubscribeGeminiAI(Gemini gemini)
+    {
+        Instance.gemini = gemini;
     }
 }
