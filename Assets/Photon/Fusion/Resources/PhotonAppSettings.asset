@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: PhotonAppSettings
   m_EditorClassIdentifier: Fusion.Realtime.dll::Fusion.Photon.Realtime.PhotonAppSettings
   AppSettings:
-    AppIdFusion: 
+    AppIdFusion: 4e061730-b52a-41ea-974f-df08307ad9b9
     AppIdChat: 
     AppIdVoice: 
     AppVersion: 
     UseNameServer: 1
-    FixedRegion: 
+    FixedRegion: ASIA
     Server: 
     Port: 0
     ProxyServer: 

@@ -55,7 +55,7 @@ namespace Fusion.Editor {
     }
 
     [Serializable]
-    private class InspectorTreeViewState : TreeViewState {
+    private class InspectorTreeViewState : TreeViewState<int> {
       public MultiColumnHeaderState HeaderState;
       public bool                   SyncSelection;
     }
@@ -175,7 +175,7 @@ namespace Fusion.Editor {
           getComparer = order => (a, b) => EditorUtility.NaturalCompare(a.Source?.GetType().Name ?? "", b.Source?.GetType().Name ?? "") * order,
         };
         yield return MakeSimpleColumn(x => x.PrefabId, new() {
-          cellGUI = (item, rect, selected, focused) => TreeView.DefaultGUI.Label(rect, item.PrefabId.ToString(false, false), selected , focused),
+          cellGUI = (item, rect, selected, focused) => TreeView<int>.DefaultGUI.Label(rect, item.PrefabId.ToString(false, false), selected , focused),
           width = 50,
           autoResize = false
         });
@@ -204,7 +204,7 @@ namespace Fusion.Editor {
         }
       }
 
-      protected override GenericMenu CreateContextMenu(GridItem item, TreeView treeView) {
+      protected override GenericMenu CreateContextMenu(GridItem item, TreeView<int> treeView) {
         
         var menu = new GenericMenu();
 
