@@ -3,49 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.UIElements;
-using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
-using static UnityEngine.Rendering.DebugUI.Table;
 
-public class WeaponLoader : MonoBehaviour
+public class WeaponLoader : MonoBehaviour 
 {
-    public event Action<Sprite, int> OnLoadWeaponSlot;
-
-    IEnumerator Start()
-    {
-        List<Coroutine> coroutines = new List<Coroutine>();
-
-        for (int i = 0; i < TempData.currentWeaponsInUse.Length; i++)
-        {
-            if (TempData.currentWeaponsInUse[i] == null)
-            {
-                break;
-            }
-
-            TempData.weaponObjectsInUse[i] = new WeaponObject();
-            TempData.weaponObjectsInUse[i].id = TempData.currentWeaponsInUse[i].id;
-            TempData.weaponObjectsInUse[i].isMelee = TempData.currentWeaponsInUse[i].isMelee;
-
-            // Thêm các Coroutine vào danh sách
-            coroutines.Add(StartCoroutine(LoadSpriteWeapon(TempData.currentWeaponsInUse[i].imgeUrl, TempData.weaponObjectsInUse[i], i)));
-            if (!TempData.weaponObjectsInUse[i].isMelee)
-            {
-                coroutines.Add(StartCoroutine(LoadSpriteHit(TempData.currentWeaponsInUse[i].hitUrl, TempData.weaponObjectsInUse[i])));
-            }
-            coroutines.Add(StartCoroutine(LoadSpriteEffect(TempData.currentWeaponsInUse[i].effectUrl, TempData.weaponObjectsInUse[i])));
-        }
-
-
-        yield break;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    private IEnumerator LoadSpriteWeapon(string imageUrl, WeaponObject weaponObject, int index)
+    public static IEnumerator LoadSpriteWeapon(string imageUrl, WeaponObject weaponObject, int index)
     {
         using (UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(imageUrl))
         {
@@ -61,8 +22,6 @@ public class WeaponLoader : MonoBehaviour
                 Debug.Log("Weapon null: " + weaponObject == null);
 
                 weaponObject.weaponSprite = newSprite;
-
-                OnLoadWeaponSlot?.Invoke(newSprite, index);
             }
             else
             {
@@ -72,7 +31,7 @@ public class WeaponLoader : MonoBehaviour
     }
 
 
-    private IEnumerator LoadSpriteHit(string imageUrl, WeaponObject weaponObject)
+    public static IEnumerator LoadSpriteHit(string imageUrl, WeaponObject weaponObject)
     {
         using (UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(imageUrl))
         {
@@ -95,7 +54,7 @@ public class WeaponLoader : MonoBehaviour
 
     }
 
-    private IEnumerator LoadSpriteEffect(string effectUrl, WeaponObject weaponObject)
+    public static IEnumerator LoadSpriteEffect(string effectUrl, WeaponObject weaponObject)
     {
         using (UnityWebRequest uwr = UnityWebRequestTexture.GetTexture(effectUrl))
         {
@@ -114,7 +73,7 @@ public class WeaponLoader : MonoBehaviour
         }
     }
 
-    private Sprite[] SliceSpriteSheet(Texture2D tex, int cols, int rows)
+    private static Sprite[] SliceSpriteSheet(Texture2D tex, int cols, int rows)
     {
         int w = tex.width / cols;
         int h = tex.height / rows;

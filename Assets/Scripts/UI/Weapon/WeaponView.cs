@@ -1,27 +1,16 @@
 ﻿using Assets.Scripts.Domain;
+using Fusion;
 using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class WeaponView : MonoBehaviour
+public class WeaponView : NetworkBehaviour
 {
     [SerializeField] private GameObject HitPrefab;
     [SerializeField] private Transform hitPos;
     [SerializeField] private GameObject hitEffectPrefab;
 
     private WeaponController weaponController;
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
 
     public void Bind(WeaponController weaponController)
     {

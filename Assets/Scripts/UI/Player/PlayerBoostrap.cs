@@ -1,26 +1,35 @@
 using Assets.Scripts.Domain;
+using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerBoostrap : MonoBehaviour
+public class PlayerBoostrap : NetworkBehaviour
 {
     [SerializeField] private PlayerInput input;
     [SerializeField] private PlayerView view;
-    [SerializeField] private WeaponLoader weaponLoader;
     [SerializeField] private WeaponView weaponView;
 
 
     private PlayerController playerController;
     private WeaponController weaponController;
+    private PlayerUICanvas playerUICanvas;
+    private WeaponInit weaponInit;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private void Awake()
+    {
+        playerUICanvas = FindFirstObjectByType<PlayerUICanvas>();
+        weaponInit = FindFirstObjectByType<WeaponInit>();
+    }
+
     void Start()
     {
         playerController = new PlayerController();
         weaponController = new WeaponController();
 
-        view.Bind(playerController, weaponLoader, weaponController);
+        view.Bind(playerController, weaponController);
         weaponView.Bind(weaponController);
+        playerUICanvas.Bind(playerController, weaponInit);
 
         input.OnMoveInput += playerController.HandleMove;
         input.OnDashPressed += playerController.HandleDash;

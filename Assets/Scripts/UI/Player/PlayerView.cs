@@ -1,4 +1,6 @@
 ﻿using Assets.Scripts.Domain;
+using Fusion;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,15 +10,11 @@ public class PlayerView : MonoBehaviour
 {
     [SerializeField] private Rigidbody2D rigidbodyPlayer;
     [SerializeField] private TrailRenderer trail;
-    [SerializeField] private Image imageSkillCooldown;
     [SerializeField] private Animator animator;
-    [SerializeField] private List<Image> weaponSlots;
-    [SerializeField] private List<GameObject> weaponSlotsBG;
     [SerializeField] private SpriteRenderer spriteWeaponRenderer;
     [SerializeField] private Transform hitPos;
 
     private PlayerController playerController;
-    private WeaponLoader weaponLoader;
     private WeaponController weaponController;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -31,20 +29,16 @@ public class PlayerView : MonoBehaviour
         
     }
 
-    public void Bind(PlayerController playerController, WeaponLoader weaponLoader, WeaponController weaponController)
+    public void Bind(PlayerController playerController, WeaponController weaponController)
     {
         this.playerController = playerController;
         this.playerController.OnMoving += HandleMoving;
         this.playerController.OnDashStart += HandleDashStart;
         this.playerController.OnDashing += HandleDashing;
         this.playerController.OnDashEnd += HandleDashEnd;
-        this.playerController.OnDashCooldown += HandleDashCooldown;
         this.playerController.OnRotate += HandleCharacterRotation;
         this.playerController.OnRotate += HandleWeaponRotation;
         this.playerController.OnUseWeapon += UseWeapon;
-
-        this.weaponLoader = weaponLoader;
-        this.weaponLoader.OnLoadWeaponSlot += ShowWeaponSLot;
 
         this.weaponController = weaponController;
     }
@@ -52,7 +46,8 @@ public class PlayerView : MonoBehaviour
     private void HandleMoving(Vector2 movingPosition, float moveSpeed)
     {
         animator.SetFloat("Speed", moveSpeed);
-        rigidbodyPlayer.MovePosition(movingPosition);
+        transform.position = movingPosition;
+        //rigidbodyPlayer.MovePosition(movingPosition);
     }
 
     private void HandleCharacterRotation(float angle)
@@ -101,24 +96,19 @@ public class PlayerView : MonoBehaviour
 
     private void HandleDashing(Vector2 targetPosition, float dashTime)
     {
-        StartCoroutine(LerpToTarget(targetPosition, dashTime));
+        StartCoroutine(DashRoutine(targetPosition, dashTime));
     }
 
-    private void HandleDashCooldown(float dashCooldown)
-    {
-        StartCoroutine(CooldownUI(dashCooldown));
-    }
-
-    private IEnumerator LerpToTarget(Vector2 target, float dashtime)
+    private IEnumerator DashRoutine(Vector2 target, float dashTime)
     {
         Vector2 start = rigidbodyPlayer.position;
         float elapsed = 0f;
-        float dashTime = 0.2f; // hoặc lấy từ domain
 
         while (elapsed < dashTime)
         {
-            rigidbodyPlayer.MovePosition(Vector2.Lerp(start, target, elapsed / dashTime));
-            elapsed += Time.deltaTime;
+            //elapsed += Runner.DeltaTime; // dùng Fusion tick time
+            Vector2 newPos = Vector2.Lerp(start, target, elapsed / dashTime);
+            rigidbodyPlayer.MovePosition(newPos);
             yield return null;
         }
 
@@ -126,20 +116,8 @@ public class PlayerView : MonoBehaviour
         playerController.EndDash();
     }
 
-    private IEnumerator CooldownUI(float dashCooldown)
-    {
-        float elapsed = 0f;
 
-        while (elapsed < dashCooldown)
-        {
-            elapsed += Time.deltaTime;
-            imageSkillCooldown.fillAmount = elapsed / dashCooldown;
-            yield return null;
-        }
 
-        playerController.ResetDash();
-        imageSkillCooldown.fillAmount = 1f;
-    }
 
     private void HandleDashEnd()
     {
@@ -150,24 +128,8 @@ public class PlayerView : MonoBehaviour
     {
         trail.emitting = true;
     }
-
-    private void ShowWeaponSLot(Sprite prite, int index)
-    {
-        weaponSlots[index].color = new Color(weaponSlots[index].color.r, weaponSlots[index].color.g, weaponSlots[index].color.b, 0.5f);
-        weaponSlotsBG[index].SetActive(false);
-        weaponSlots[index].sprite = prite;
-    }
-
     private void UseWeapon(WeaponObject weapon, int index)
     {
-        for (int i = 0; i < weaponSlots.Count; i++)
-        {
-            weaponSlots[i].color = new Color(weaponSlots[i].color.r, weaponSlots[i].color.g, weaponSlots[i].color.b, 0.5f);
-            weaponSlotsBG[i].SetActive(false);
-        }
-        weaponSlots[index].color = new Color(weaponSlots[index].color.r, weaponSlots[index].color.g, weaponSlots[index].color.b, 1f);
-        weaponSlotsBG[index].SetActive(true);
-
         //Render Weapon
         spriteWeaponRenderer.sprite = weapon.weaponSprite;
         // Lưu lại world position ban đầu của child
