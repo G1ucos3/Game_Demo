@@ -16,7 +16,7 @@ public class PlayerController
     private bool canMove = true;
     private bool isDashing  = false;
     private float dashDistance = 3f;
-    private float dashTime = 0.2f;
+    private float dashTime = 0.5f;
     private float dashCooldown = 1f;
 
     public bool CanDash => canDash;

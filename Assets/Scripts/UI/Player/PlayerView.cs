@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerView : MonoBehaviour
+public class PlayerView : NetworkBehaviour
 {
     [SerializeField] private Rigidbody2D rigidbodyPlayer;
     [SerializeField] private TrailRenderer trail;
@@ -46,8 +46,8 @@ public class PlayerView : MonoBehaviour
     private void HandleMoving(Vector2 movingPosition, float moveSpeed)
     {
         animator.SetFloat("Speed", moveSpeed);
-        transform.position = movingPosition;
-        //rigidbodyPlayer.MovePosition(movingPosition);
+        rigidbodyPlayer.MovePosition(movingPosition);
+        //transform.position = movingPosition;
     }
 
     private void HandleCharacterRotation(float angle)
@@ -96,28 +96,24 @@ public class PlayerView : MonoBehaviour
 
     private void HandleDashing(Vector2 targetPosition, float dashTime)
     {
-        StartCoroutine(DashRoutine(targetPosition, dashTime));
+        StartCoroutine(LerpToTarget(targetPosition, dashTime));
     }
 
-    private IEnumerator DashRoutine(Vector2 target, float dashTime)
+    private IEnumerator LerpToTarget(Vector2 target, float dashtime)
     {
         Vector2 start = rigidbodyPlayer.position;
         float elapsed = 0f;
 
-        while (elapsed < dashTime)
+        while (elapsed < dashtime)
         {
-            //elapsed += Runner.DeltaTime; // dùng Fusion tick time
-            Vector2 newPos = Vector2.Lerp(start, target, elapsed / dashTime);
-            rigidbodyPlayer.MovePosition(newPos);
+            rigidbodyPlayer.MovePosition(Vector2.Lerp(start, target, elapsed / dashtime));
+            elapsed += Runner.DeltaTime;
             yield return null;
         }
 
         rigidbodyPlayer.MovePosition(target);
         playerController.EndDash();
     }
-
-
-
 
     private void HandleDashEnd()
     {

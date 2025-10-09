@@ -46,9 +46,8 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         {
             return;
         }
-
-        OnMoveInput?.Invoke(transform.position, moveInput, Time.fixedDeltaTime);
-        Debug.Log("pre position: " + transform.position);
+        float deltaTime = Runner.DeltaTime;
+        OnMoveInput?.Invoke(transform.position, moveInput, deltaTime);
         OnRotate?.Invoke(GetMousePos(), transform.position);
     }
 
@@ -89,6 +88,10 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
 
     private void OnDash(InputAction.CallbackContext ctx)
     {
+        if (HasInputAuthority == false)
+        {
+            return;
+        }
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
         OnDashPressed?.Invoke(transform.position, moveInput, GetMousePos());
