@@ -7,15 +7,16 @@ public class PlayerController
     public event Action<Vector2, float> OnMoving;
     public event Action<Vector2, float> OnDashing;
     public event Action<float> OnRotate;
-    public event Action<float> OnDashCooldown;   // Thông báo view update cooldown
+    public event Action<float> OnDashCooldown;   // Thông báo view update cooldown 
     public event Action OnDashStart;
     public event Action OnDashEnd;
     public event Action<WeaponObject, int> OnUseWeapon;
 
+    [SerializeField] private float moveSpeed = 5f;
     private bool canDash = true;
     private bool canMove = true;
     private bool isDashing  = false;
-    private float dashDistance = 3f;
+    [SerializeField] private float dashDistance = 3f;
     private float dashTime = 0.2f;
     private float dashCooldown = 1f;
 
@@ -29,7 +30,7 @@ public class PlayerController
     {
         if (canMove)
         {
-            currentPos += dir * 5f * time;
+            currentPos += dir * moveSpeed * time;
             OnMoving?.Invoke(currentPos, dir.magnitude);
         }
     }

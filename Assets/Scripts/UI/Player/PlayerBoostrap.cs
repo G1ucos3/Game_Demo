@@ -13,7 +13,7 @@ public class PlayerBoostrap : MonoBehaviour
     private PlayerController playerController;
     private WeaponController weaponController;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    // Start is called once before the first execution of Update after the MonoBehaviour is created 
     void Start()
     {
         playerController = new PlayerController();

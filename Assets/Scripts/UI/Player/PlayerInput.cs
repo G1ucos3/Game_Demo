@@ -20,7 +20,7 @@ public class PlayerInput : MonoBehaviour
 
     private void OnEnable()
     {
-        // Enable action map "Player"
+        // Enable action map "Player" 
         inputActions.Player.Enable();
         inputActions.Player.Move.performed += OnMove;
         inputActions.Player.Move.canceled += OnCancelMove;

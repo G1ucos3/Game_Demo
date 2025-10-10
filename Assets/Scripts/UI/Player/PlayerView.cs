@@ -60,25 +60,25 @@ public class PlayerView : MonoBehaviour
         // Chia góc thành 4 vùng để xác định trạng thái
         if (angle >= 45 && angle < 135)
         {
-            // Hướng lên
+            // Hướng lên 
             animator.SetFloat("DirectionX", 0);
             animator.SetFloat("DirectionY", 1);
         }
         else if (angle >= 135 || angle < -135)
         {
-            // Hướng trái
+            // Hướng trái 
             animator.SetFloat("DirectionX", -1);
             animator.SetFloat("DirectionY", 0);
         }
         else if (angle >= -135 && angle < -45)
         {
-            // Hướng xuống
+            // Hướng xuống 
             animator.SetFloat("DirectionX", 0);
             animator.SetFloat("DirectionY", -1);
         }
         else
         {
-            //Hướng phải
+            //Hướng phải 
             animator.SetFloat("DirectionX", 1);
             animator.SetFloat("DirectionY", 0);
         }
