@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.Domain;
 using Fusion;
+using Fusion.Addons.Physics;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using UnityEngine.UI;
 public class PlayerView : NetworkBehaviour
 {
     [SerializeField] private Rigidbody2D rigidbodyPlayer;
+    [SerializeField] private NetworkRigidbody2D networkRigidbody2D;
     [SerializeField] private TrailRenderer trail;
     [SerializeField] private Animator animator;
     [SerializeField] private SpriteRenderer spriteWeaponRenderer;

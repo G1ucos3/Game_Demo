@@ -18,6 +18,7 @@ public class PlayerController
     private float dashDistance = 3f;
     private float dashTime = 0.5f;
     private float dashCooldown = 1f;
+    private float moveSpeed = 10f;
 
     public bool CanDash => canDash;
     public bool IsDashing => isDashing;
@@ -29,7 +30,7 @@ public class PlayerController
     {
         if (canMove)
         {
-            currentPos += dir * 5f * time;
+            currentPos += dir * moveSpeed * time;
             OnMoving?.Invoke(currentPos, dir.magnitude);
         }
     }

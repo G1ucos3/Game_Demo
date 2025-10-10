@@ -17,8 +17,8 @@ GameObject:
   - component: {fileID: 2407656601438669025}
   - component: {fileID: 529151882944441424}
   - component: {fileID: 7521706514822879156}
-  - component: {fileID: 4972471669204033929}
-  - component: {fileID: 4967080895150511770}
+  - component: {fileID: 1400389766636972200}
+  - component: {fileID: 1307429184585099040}
   m_Layer: 3
   m_Name: PlayerPrefab
   m_TagString: Player
@@ -309,7 +309,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 133935572bb332e409e0d9ce5cf91dc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerView
-  rigidbodyPlayer: {fileID: 4972471669204033929}
+  rigidbodyPlayer: {fileID: 1400389766636972200}
+  networkRigidbody2D: {fileID: 1307429184585099040}
   trail: {fileID: 7007055650314739527}
   animator: {fileID: 1407503535901776473}
   spriteWeaponRenderer: {fileID: 2223276001200403482}
@@ -334,11 +335,11 @@ MonoBehaviour:
   - {fileID: 6124014987082536689}
   - {fileID: 2407656601438669025}
   - {fileID: 529151882944441424}
-  - {fileID: 4967080895150511770}
+  - {fileID: 1307429184585099040}
   - {fileID: 289898358341846541}
   - {fileID: 7545582245279740865}
   ForceRemoteRenderTimeframe: 0
---- !u!50 &4972471669204033929
+--- !u!50 &1400389766636972200
 Rigidbody2D:
   serializedVersion: 5
   m_ObjectHideFlags: 0
@@ -365,7 +366,7 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &4967080895150511770
+--- !u!114 &1307429184585099040
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -374,14 +375,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 1285368881791616}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Script: {fileID: 11500000, guid: c5e690b5fb1084f5ab1c86457af401d4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkTransform
+  m_EditorClassIdentifier: Fusion.Addons.Physics::Fusion.Addons.Physics.NetworkRigidbody2D
   _stateAuthorityChangeErrorCorrectionDelta: 0
   SyncScale: 1
   SyncParent: 1
-  _autoAOIOverride: 1
-  DisableSharedModeInterpolation: 0
+  _interpolationTarget: {fileID: 0}
+  UsePreciseRotation: 0
+  UseRenderSleepThresholds: 1
+  RenderThresholds:
+    UseEnergy: 1
+    Position: 0.01
+    Rotation: 0.01
+    Scale: 0.01
 --- !u!1 &1067434133443626140
 GameObject:
   m_ObjectHideFlags: 0
