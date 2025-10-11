@@ -1,13 +1,21 @@
-﻿using System;
+﻿using Fusion;
+using Fusion.Sockets;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Fusion;
-using Fusion.Sockets;
-using System.Collections.Generic;
+using UnityEngine.InputSystem.XR;
+
+public struct PlayerNetworkInput : INetworkInput
+{
+    public Vector2 CurentPosition;
+    public Vector2 MoveDir;
+    public float Time;
+}
 
 public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
 {
-    public event Action<Vector2, Vector2, float> OnMoveInput;
+    public event Action<Vector2> OnMoveInput;
     public event Action<Vector2, Vector2, Vector2?> OnDashPressed;
     public event Action<Vector2, Vector2> OnRotate;
     public event Action<int> OnChangeWeapon;
@@ -23,7 +31,6 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
 
     private void OnEnable()
     {
-        // Enable action map "Player"
         inputActions.Player.Enable();
         inputActions.Player.Move.performed += OnMove;
         inputActions.Player.Move.canceled += OnCancelMove;
@@ -37,22 +44,26 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
 
     void Start()
     {
-
-    }
-
-    public override void FixedUpdateNetwork()
-    {
-        if (HasInputAuthority == false)
+        if (Runner != null)
         {
-            return;
+            Runner.AddCallbacks(this);
         }
-        float deltaTime = Runner.DeltaTime;
-        OnMoveInput?.Invoke(transform.position, moveInput, deltaTime);
-        OnRotate?.Invoke(GetMousePos(), transform.position);
     }
 
-    // Update is called once per frame
-    public override void Render()
+    // PlayerInput.cs - FixedUpdateNetwork() - MỚI
+    public override void FixedUpdateNetwork()
+    {
+        // Cả Host và Client có quyền điều khiển đều chạy logic bên trong
+        if (GetInput(out PlayerNetworkInput input))
+        {
+            // 1. Logic di chuyển được chạy cho cả hai
+            OnMoveInput?.Invoke(input.MoveDir);
+            OnRotate?.Invoke(GetMousePos(), transform.position);
+        }
+    }
+
+    // Update is called once per frame
+    public override void Render()
     {
         if (HasInputAuthority == false)
         {
@@ -102,6 +113,17 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
         return (Vector2)mouseWorldPos;
+    }
+
+    public void OnInput(NetworkRunner runner, NetworkInput input)
+    {
+        // Called on the local owner to submit input to the runner
+        if (!HasInputAuthority) return;
+
+        input.Set(new PlayerNetworkInput
+        {
+            MoveDir = moveInput,
+        });
     }
 
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
@@ -159,11 +181,6 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         throw new NotImplementedException();
     }
 
-    public void OnInput(NetworkRunner runner, NetworkInput input)
-    {
-        throw new NotImplementedException();
-    }
-
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input)
     {
         throw new NotImplementedException();
@@ -198,4 +215,6 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
     {
         throw new NotImplementedException();
     }
+    // Removed unused INetworkRunnerCallbacks methods to avoid runtime NotImplementedException.
+
 }

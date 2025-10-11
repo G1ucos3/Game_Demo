@@ -45,10 +45,10 @@ public class PlayerView : NetworkBehaviour
         this.weaponController = weaponController;
     }
 
-    private void HandleMoving(Vector2 movingPosition, float moveSpeed)
+    private void HandleMoving(Vector2 moveDir, float moveSpeed)
     {
-        animator.SetFloat("Speed", moveSpeed);
-        rigidbodyPlayer.MovePosition(movingPosition);
+        animator.SetFloat("Speed", moveDir.magnitude);
+        rigidbodyPlayer.linearVelocity = moveDir * moveSpeed;
         //transform.position = movingPosition;
     }
 
