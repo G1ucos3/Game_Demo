@@ -8,9 +8,9 @@ using UnityEngine.InputSystem.XR;
 
 public struct PlayerNetworkInput : INetworkInput
 {
-    public Vector2 CurentPosition;
+    public Vector2 MousePosition;
     public Vector2 MoveDir;
-    public float Time;
+    public Vector2 CurrentPosition;
 }
 
 public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
@@ -58,7 +58,7 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         {
             // 1. Logic di chuyển được chạy cho cả hai
             OnMoveInput?.Invoke(input.MoveDir);
-            OnRotate?.Invoke(GetMousePos(), transform.position);
+            OnRotate?.Invoke(input.MousePosition, input.CurrentPosition);
         }
     }
 
@@ -123,6 +123,8 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         input.Set(new PlayerNetworkInput
         {
             MoveDir = moveInput,
+            MousePosition = GetMousePos(),
+            CurrentPosition = transform.position
         });
     }
 
