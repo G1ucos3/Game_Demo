@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.Domain;
 using Fusion;
+using Fusion.Addons.Physics;
 using UnityEngine;
 
 public class HitView : NetworkBehaviour
@@ -32,9 +33,12 @@ public class HitView : NetworkBehaviour
         polygon.isTrigger = true;
         if (Object.HasStateAuthority)
         {
-            Debug.Log("Bay");
-            Rigidbody2D rigidbody = GetComponent<Rigidbody2D>();
-            rigidbody.AddForce(transform.right * force, ForceMode2D.Impulse);
+            //Debug.Log("Bay");
+            //Rigidbody2D rigidbody = GetComponent<Rigidbody2D>();
+            //rigidbody.AddForce(transform.right * force, ForceMode2D.Impulse);
+            NetworkRigidbody2D nrb = GetComponent<NetworkRigidbody2D>();
+            nrb.Rigidbody.AddForce(transform.right * force, ForceMode2D.Impulse);
+
         }
     }
 

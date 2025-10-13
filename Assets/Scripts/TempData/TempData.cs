@@ -316,10 +316,10 @@ public class TempData
 
     public static CurrentWeapon[] currentWeaponsInUse = new CurrentWeapon[]
     {
-        new CurrentWeapon(1,"Kiếm lửa thường",
-            "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758528470/0d04c180-3daa-4c62-8901-6bf5d0533964.png",
-            "",
-            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757481121/explose_fnf7rz.png", true),
+        new CurrentWeapon(50,"Phi Tiêu Ma Pháp",
+            "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758692759/53f757ca-89cd-4056-9050-65b90e605cd1.png",
+            "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758692759/53f757ca-89cd-4056-9050-65b90e605cd1.png",
+            "https://res.cloudinary.com/dl2rytqvu/image/upload/v1757480002/effect1_pnlbaf.png", false),
         new CurrentWeapon(41,"Cung Thủy thánh",
             "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758539206/download_7_divmby.png",
             "https://res.cloudinary.com/dlwtf6nid/image/upload/v1758539206/cung_7_kuvqcp.png",

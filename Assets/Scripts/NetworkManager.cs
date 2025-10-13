@@ -7,14 +7,17 @@ using UnityEngine.SceneManagement;
 
 public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 {
-    private NetworkRunner _runner;
+    
+    [SerializeField] private NetworkRunner _runner;
 
     [SerializeField] private NetworkPrefabRef _playerPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
 
+    private bool isSelectedRole = false;
+
     async void StartGame(GameMode mode)
     {
-        _runner = gameObject.AddComponent<NetworkRunner>();
+        //_runner = gameObject.AddComponent<NetworkRunner>();
         _runner.ProvideInput = true;
 
         await _runner.StartGame(new StartGameArgs()
@@ -29,15 +32,17 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
     private void OnGUI()
     {
-        if (_runner == null)
+        if (!isSelectedRole)
         {
             if (GUI.Button(new Rect(0, 0, 200, 40), "Host"))
             {
                 StartGame(GameMode.Host);
+                isSelectedRole = true;
             }
             if (GUI.Button(new Rect(0, 40, 200, 40), "Join"))
             {
                 StartGame(GameMode.Client);
+                isSelectedRole = true;
             }
         }
     }
@@ -47,25 +52,14 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
         // Chỉ chạy trên Server/Host
         if (runner.IsServer)
         {
-            // Log 1: Xác nhận hàm được gọi cho player nào
-            Debug.Log($"[NetworkManager] OnPlayerJoined called for player: {player}. Spawning prefab...");
-
             Vector3 spawnPosition = new Vector3(0, 0, 0);
             NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
 
-            // Kiểm tra xem việc spawn có thành công không
             if (networkPlayerObject != null)
             {
-                // Log 2: Ghi lại ID của object vừa được spawn
-                Debug.Log($"[NetworkManager] Spawned object ID: {networkPlayerObject.Id} for player: {player}");
-
                 _spawnedCharacters.Add(player, networkPlayerObject);
 
-                // Dòng quan trọng nhất
                 runner.SetPlayerObject(player, networkPlayerObject);
-
-                // Log 3: Xác nhận việc đăng ký đã được gọi
-                Debug.Log($"[NetworkManager] SetPlayerObject called successfully for player: {player}.");
             }
             else
             {
