@@ -44,12 +44,34 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
+        // Chỉ chạy trên Server/Host
         if (runner.IsServer)
         {
-            // FIXED: runner.Config.Simulation.DefaultPlayers đã bị thay đổi thành runner.SessionInfo.MaxPlayers
-            Vector3 spawnPosition = new Vector3(0,0,0);
+            // Log 1: Xác nhận hàm được gọi cho player nào
+            Debug.Log($"[NetworkManager] OnPlayerJoined called for player: {player}. Spawning prefab...");
+
+            Vector3 spawnPosition = new Vector3(0, 0, 0);
             NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-            _spawnedCharacters.Add(player, networkPlayerObject);
+
+            // Kiểm tra xem việc spawn có thành công không
+            if (networkPlayerObject != null)
+            {
+                // Log 2: Ghi lại ID của object vừa được spawn
+                Debug.Log($"[NetworkManager] Spawned object ID: {networkPlayerObject.Id} for player: {player}");
+
+                _spawnedCharacters.Add(player, networkPlayerObject);
+
+                // Dòng quan trọng nhất
+                runner.SetPlayerObject(player, networkPlayerObject);
+
+                // Log 3: Xác nhận việc đăng ký đã được gọi
+                Debug.Log($"[NetworkManager] SetPlayerObject called successfully for player: {player}.");
+            }
+            else
+            {
+                // Log 4: Báo lỗi nếu spawn thất bại
+                Debug.LogError($"[NetworkManager] Failed to spawn prefab for player: {player}.");
+            }
         }
     }
 

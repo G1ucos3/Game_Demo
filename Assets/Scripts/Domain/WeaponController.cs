@@ -13,13 +13,13 @@ namespace Assets.Scripts.Domain
 {
     public class WeaponController
     {
-        public event Action<float, float, float, float, float> MeleeAttackEvent;
-        public event Action<float, float, float, float, Sprite> RangeAttackEvent;
-        public event Action<Vector2, float, Sprite[]> OnAttackEvent;
+        public event Action<int, float, float, float, float, float> MeleeAttackEvent;
+        public event Action<int, float, float, float, float, Sprite> RangeAttackEvent;
+        public event Action<Vector2, float, int> OnAttackEvent;
 
         private bool canAttack = true;
         private float timeAttackMelee = 0.6f;
-        private float speedMelee = 0.2f;
+        private float speedMelee = 0.5f;
 
         private float timeAttackRange = 0.4f;
         private float forceRange = 15f;
@@ -27,22 +27,22 @@ namespace Assets.Scripts.Domain
 
         private float frameRate = 0.1f;
 
-        public void Attack(Vector2 mousePos, Vector2 currentPos)
+        public void Attack(int weaponIndex, Vector2 mousePos, Vector2 currentPos)
         {
             if (WeaponObject.Instance == null || !canAttack) return;
 
             canAttack = false;
             if (WeaponObject.Instance.isMelee)
             {
-                MelleeAttack(mousePos, currentPos);
+                MelleeAttack(weaponIndex, mousePos, currentPos);
             } 
             else
             {
-                RangeAttack(mousePos, currentPos);
+                RangeAttack(weaponIndex, mousePos, currentPos);
             }
         }
 
-        public void MelleeAttack(Vector2 mousePos, Vector2 currentPos)
+        public void MelleeAttack(int weaponIndex, Vector2 mousePos, Vector2 currentPos)
         {
             float curentAngle = GetAngleMouseAndWeapon(mousePos, currentPos);
             Debug.Log("Current angle: " + curentAngle);
@@ -60,12 +60,12 @@ namespace Assets.Scripts.Domain
                 endAngle = curentAngle + 75;
             }
 
-            MeleeAttackEvent?.Invoke(curentAngle, startAngle, endAngle, timeAttackMelee, speedMelee);
+            MeleeAttackEvent?.Invoke(weaponIndex, curentAngle, startAngle, endAngle, timeAttackMelee, speedMelee);
         }
 
-        public void RangeAttack(Vector2 mousePos, Vector2 currentPos)
+        public void RangeAttack(int weaponIndex, Vector2 mousePos, Vector2 currentPos)
         {
-            RangeAttackEvent?.Invoke(GetAngleMouseAndWeapon(mousePos, currentPos), forceRange, timeAttackRange, speedRange, WeaponObject.Instance.hitSprite);
+            RangeAttackEvent?.Invoke(weaponIndex, GetAngleMouseAndWeapon(mousePos, currentPos), forceRange, timeAttackRange, speedRange, WeaponObject.Instance.hitSprite);
         }
 
         public void ResetAttack()
@@ -86,9 +86,9 @@ namespace Assets.Scripts.Domain
             return angle;
         }
 
-        public void OnHitEnemy(Vector2 position)
+        public void OnHitEnemy(int WeaponIndex, Vector2 position)
         {
-            OnAttackEvent?.Invoke(position, frameRate, WeaponObject.Instance.effectSprites);
+            OnAttackEvent?.Invoke(position, frameRate, WeaponIndex);
         }
     }
 }

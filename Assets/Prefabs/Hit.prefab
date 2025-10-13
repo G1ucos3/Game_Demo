@@ -10,8 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 6162691284855155440}
   - component: {fileID: 3041968604438170110}
-  - component: {fileID: 4770689241465089610}
   - component: {fileID: 8224961039016625850}
+  - component: {fileID: 2267162652482157792}
+  - component: {fileID: 828656200111959858}
+  - component: {fileID: 3070402456648507121}
   m_Layer: 0
   m_Name: Hit
   m_TagString: Untagged
@@ -92,7 +94,40 @@ SpriteRenderer:
   m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!50 &4770689241465089610
+--- !u!114 &8224961039016625850
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7635755821743845275}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8b23b5838795bf4083ef0372ebb9d65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HitView
+  _WeaponIndex: 0
+--- !u!114 &2267162652482157792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7635755821743845275}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 276655787
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 8224961039016625850}
+  - {fileID: 3070402456648507121}
+  ForceRemoteRenderTimeframe: 0
+--- !u!50 &828656200111959858
 Rigidbody2D:
   serializedVersion: 5
   m_ObjectHideFlags: 0
@@ -119,7 +154,7 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &8224961039016625850
+--- !u!114 &3070402456648507121
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -128,6 +163,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 7635755821743845275}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8b23b5838795bf4083ef0372ebb9d65, type: 3}
+  m_Script: {fileID: 11500000, guid: c5e690b5fb1084f5ab1c86457af401d4, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HitView
+  m_EditorClassIdentifier: Fusion.Addons.Physics::Fusion.Addons.Physics.NetworkRigidbody2D
+  _stateAuthorityChangeErrorCorrectionDelta: 0
+  SyncScale: 0
+  SyncParent: 1
+  _interpolationTarget: {fileID: 0}
+  UsePreciseRotation: 0
+  UseRenderSleepThresholds: 1
+  RenderThresholds:
+    UseEnergy: 1
+    Position: 0.01
+    Rotation: 0.01
+    Scale: 0.01

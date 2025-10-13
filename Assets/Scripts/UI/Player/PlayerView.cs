@@ -28,7 +28,7 @@ public class PlayerView : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     public void Bind(PlayerController playerController, WeaponController weaponController)
@@ -128,17 +128,36 @@ public class PlayerView : NetworkBehaviour
     }
     private void UseWeapon(WeaponObject weapon, int index)
     {
-        //Render Weapon
-        spriteWeaponRenderer.sprite = weapon.weaponSprite;
-        // Lưu lại world position ban đầu của child
+        Rpc_RequestChangeWeapon(index);
+    }
+
+    [Rpc(sources: RpcSources.InputAuthority, targets: RpcTargets.All, HostMode = RpcHostMode.SourceIsHostPlayer)]
+    public void Rpc_RequestChangeWeapon(int index, RpcInfo info = default)
+    {
+        PlayerRef sender = info.Source;
+        NetworkObject playerNetObject = Runner.GetPlayerObject(sender);
+
+        if (playerNetObject == null)
+        {
+            Debug.LogWarning($"[RPC Server] GetPlayerObject returned NULL for sender {sender}. The association was never made or was lost.");
+            return;
+        }
+
+        // Nếu tìm thấy, lấy GameObject
+        GameObject playerObject = playerNetObject.gameObject;
+
+        Transform weaponTransform = playerObject.transform.Find("Weapon");
+        SpriteRenderer spriteWeaponRenderer = weaponTransform.GetComponent<SpriteRenderer>();
+        Transform hitPos = weaponTransform.Find("HitPos");
+
+        spriteWeaponRenderer.sprite = TempData.weaponObjectsInUse[index].weaponSprite;
         Vector3 worldPos = hitPos.position;
 
-        float desiredHeight = weapon.isMelee ? 0.25f : 0.5f;
+        float desiredHeight = TempData.weaponObjectsInUse[index].isMelee ? 0.25f : 0.5f;
         float spriteHeight = spriteWeaponRenderer.sprite.bounds.size.y;
         float scale = desiredHeight / spriteHeight;
         spriteWeaponRenderer.transform.localScale = new Vector3(-scale, scale, 1);
 
-        // Cập nhật lại localPosition của child để world position không đổi
         hitPos.localPosition = spriteWeaponRenderer.transform.InverseTransformPoint(worldPos);
     }
 }

@@ -11,13 +11,14 @@ public class WeaponView : NetworkBehaviour
     [SerializeField] private GameObject hitEffectPrefab;
 
     private WeaponController weaponController;
+    private int weaponIndex;
 
     public void Bind(WeaponController weaponController)
     {
         this.weaponController = weaponController;
         this.weaponController.MeleeAttackEvent += MeleeAttack;
         this.weaponController.RangeAttackEvent += RangeAttack;
-        this.weaponController.OnAttackEvent += OnHitEnemy;
+        this.weaponController.OnAttackEvent += RPC_OnHitEnemy;
     }
 
     private IEnumerator CooldownAttack(float cooldown)
@@ -32,83 +33,109 @@ public class WeaponView : NetworkBehaviour
         weaponController.ResetAttack();
     }
 
-    private void MeleeAttack(float currentAngle, float startAngle, float endAngle, float timeAttack, float speed)
+    private void MeleeAttack(int weaponIndex, float currentAngle, float startAngle, float endAngle, float timeAttack, float speed)
     {
-        StartCoroutine(OnMeleeAttack(currentAngle, startAngle, endAngle, speed));
+        this.weaponIndex = weaponIndex;
+        Rpc_MeleeAttack(currentAngle, startAngle, endAngle, speed);
         StartCoroutine(CooldownAttack(timeAttack));
     }
 
-    private IEnumerator OnMeleeAttack(float currentAngle, float startAngle, float endAngle, float speed)
+    [Rpc(sources: RpcSources.InputAuthority, targets: RpcTargets.All, HostMode = RpcHostMode.SourceIsHostPlayer)]
+    public void Rpc_MeleeAttack(float currentAngle, float startAngle, float endAngle, float speed, RpcInfo info = default)
+    {
+        PlayerRef sender = info.Source;
+        NetworkObject playerNetObject = Runner.GetPlayerObject(sender);
+
+        if (playerNetObject == null)
+        {
+            Debug.LogWarning($"[RPC Server] GetPlayerObject returned NULL for sender {sender}. The association was never made or was lost.");
+            return;
+        }
+
+        // Nếu tìm thấy, lấy GameObject
+        GameObject playerObject = playerNetObject.gameObject;
+
+        GameObject weaponObject = playerObject.transform.Find("Weapon").gameObject;
+        StartCoroutine(OnMeleeAttack(currentAngle, startAngle, endAngle, speed, weaponObject));
+    }
+    private IEnumerator OnMeleeAttack(float currentAngle, float startAngle, float endAngle, float speed, GameObject weaponObject)
     {
         float step = (endAngle - startAngle) / speed;
         float angle = startAngle;
         float time = 0;
         Quaternion rotation;
-        PolygonCollider2D polygon = gameObject.AddComponent<PolygonCollider2D>();
+        
+        //chỉ nên để phía host
+        PolygonCollider2D polygon = weaponObject.AddComponent<PolygonCollider2D>();
+
         while (time < speed)
         {
-            angle += step * Time.deltaTime;
+            angle += step * Runner.DeltaTime;
             rotation = Quaternion.Euler(0, 0, angle);
-            transform.rotation = rotation;
-            time += Time.deltaTime;
+            weaponObject.transform.rotation = rotation;
+            time += Runner.DeltaTime;
             yield return null;
         }
         Destroy(polygon);
         rotation = Quaternion.Euler(0, 0, currentAngle);
-        transform.rotation = rotation;
+        weaponObject.transform.rotation = rotation;
     }
 
-    private void RangeAttack(float angle, float force, float timeAttackRange, float speedRange, Sprite hitSprite)
+    private void RangeAttack(int weaponIndex, float angle, float force, float timeAttackRange, float speedRange, Sprite hitSprite)
     {
-        GameObject hitTmp = Instantiate(HitPrefab, hitPos.position, Quaternion.identity);
-        HitView hitView = hitTmp.GetComponent<HitView>();
-        hitView.Binding(weaponController);
-        Quaternion rotation = Quaternion.Euler(0, 0, angle);
-        hitTmp.transform.rotation = rotation;
-        SpriteRenderer spriteHit = hitTmp.GetComponent<SpriteRenderer>();
-        spriteHit.sprite = hitSprite;
-        spriteHit.transform.localScale = new Vector3(-0.1f, 0.1f, 1);
-        PolygonCollider2D polygon = hitTmp.AddComponent<PolygonCollider2D>();
-        polygon.isTrigger = true;
-        Rigidbody2D rigidbody = hitTmp.GetComponent<Rigidbody2D>();
-        rigidbody.AddForce(transform.right * force, ForceMode2D.Impulse);
+        Rpc_SpawnHit(weaponIndex, angle);
         StartCoroutine(CooldownAttack(timeAttackRange));
     }
 
-    private void OnHitEnemy(Vector2 position, float frameRate, Sprite[] effect)
+    [Rpc(sources: RpcSources.InputAuthority, targets: RpcTargets.StateAuthority, HostMode = RpcHostMode.SourceIsHostPlayer)]
+    public void Rpc_SpawnHit(int index, float angle, RpcInfo info = default)
     {
-        if (effect == null || effect.Length == 0)
+        PlayerRef sender = info.Source;
+        NetworkObject playerNetObject = Runner.GetPlayerObject(sender);
+
+        if (playerNetObject == null)
         {
-            Debug.LogWarning("WeaponView.OnHitEnemy: effectSprites is null or empty, skip effect.");
+            Debug.LogWarning($"[RPC Server] GetPlayerObject returned NULL for sender {sender}. The association was never made or was lost.");
             return;
         }
-        if (hitEffectPrefab == null)
-        {
-            Debug.LogError("WeaponView.OnHitEnemy: hitEffectPrefab is null!");
-            return;
-        }
+
+        // Nếu tìm thấy, lấy GameObject
+        GameObject playerObject = playerNetObject.gameObject;
+        Transform weaponTransform = playerObject.transform.Find("Weapon");
+        Transform hitPos = weaponTransform.Find("HitPos");
+
+        Runner.Spawn(
+            HitPrefab, 
+            hitPos.position, 
+            Quaternion.Euler(0, 0, angle), 
+            info.Source,
+            (runner, newObject) =>
+            {
+                newObject.GetComponent<HitView>().SetWeaponIndex(index);
+                newObject.GetComponent<HitView>().Binding(weaponController);
+            });
+    }
+
+    [Rpc(sources: RpcSources.StateAuthority, targets: RpcTargets.All, HostMode = RpcHostMode.SourceIsHostPlayer)]
+    private void RPC_OnHitEnemy(Vector2 position, float frameRate, int weaponIndex)
+    {
         var hitEffectTmp = Instantiate(hitEffectPrefab, position, Quaternion.identity);
-        if (hitEffectTmp == null)
-        {
-            Debug.LogError("WeaponView.OnHitEnemy: Instantiated hitEffectPrefab is null!");
-            return;
-        }
         HitEffectView hitEffectView = hitEffectTmp.GetComponent<HitEffectView>();
-        if (hitEffectView == null)
-        {
-            Debug.LogError("WeaponView.OnHitEnemy: HitEffectView component is missing on hitEffectPrefab!");
-            return;
-        }
+        Sprite[] effect = TempData.weaponObjectsInUse[weaponIndex].effectSprites;
         hitEffectView.Play(frameRate, effect);
     }
 
     private void OnCollisionEnter2D(Collision2D col)
     {
+        if (!HasStateAuthority)
+        {
+            return;
+        }
         if (col.gameObject.tag == "Enemy")
         {
             ContactPoint2D cp = col.GetContact(0);
             Vector2 hitPos = cp.point;      // vị trí va chạm (world)
-            weaponController.OnHitEnemy(hitPos);
+            weaponController.OnHitEnemy(weaponIndex, hitPos);
         }
     }
 }

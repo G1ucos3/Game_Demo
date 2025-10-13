@@ -6,11 +6,16 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
 
-public struct PlayerNetworkInput : INetworkInput
+public struct PlayerNetworkInputMove : INetworkInput
 {
     public Vector2 MousePosition;
     public Vector2 MoveDir;
     public Vector2 CurrentPosition;
+}
+
+public struct PlayerNetworkInputChangeWeapon : INetworkInput
+{
+    public int WeaponIndex;
 }
 
 public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
@@ -19,10 +24,12 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
     public event Action<Vector2, Vector2, Vector2?> OnDashPressed;
     public event Action<Vector2, Vector2> OnRotate;
     public event Action<int> OnChangeWeapon;
-    public event Action<Vector2, Vector2> OnAttack;
+    public event Action<int, Vector2, Vector2> OnAttack;
 
     private InputActions inputActions;
     private Vector2 moveInput;
+
+    private int currentWeaponIndex;
 
     void Awake()
     {
@@ -35,6 +42,8 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         inputActions.Player.Move.performed += OnMove;
         inputActions.Player.Move.canceled += OnCancelMove;
         inputActions.Player.Dash.performed += OnDash;
+        inputActions.Player.ChangeWeapon.performed += ChangeWeapon;
+        inputActions.Player.Attack.performed += OnAttackEvent;
     }
 
     private void OnDisable()
@@ -50,11 +59,25 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         }
     }
 
+    public void OnInput(NetworkRunner runner, NetworkInput input)
+    {
+        // Called on the local owner to submit input to the runner
+        if (!HasInputAuthority) return;
+
+        input.Set(new PlayerNetworkInputMove
+        {
+            MoveDir = moveInput,
+            MousePosition = GetMousePos(),
+            CurrentPosition = transform.position
+        });
+    }
+
+
     // PlayerInput.cs - FixedUpdateNetwork() - MỚI
     public override void FixedUpdateNetwork()
     {
         // Cả Host và Client có quyền điều khiển đều chạy logic bên trong
-        if (GetInput(out PlayerNetworkInput input))
+        if (GetInput(out PlayerNetworkInputMove input))
         {
             // 1. Logic di chuyển được chạy cho cả hai
             OnMoveInput?.Invoke(input.MoveDir);
@@ -69,27 +92,17 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         {
             return;
         }
-        if (Keyboard.current.digit1Key.wasPressedThisFrame)
-        {
-            OnChangeWeapon?.Invoke(0);
-        }
-        if (Keyboard.current.digit2Key.wasPressedThisFrame)
-        {
-            OnChangeWeapon?.Invoke(1);
-        }
-        if (Keyboard.current.digit3Key.wasPressedThisFrame)
-        {
-            OnChangeWeapon?.Invoke(2);
-        }
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            OnAttack?.Invoke(GetMousePos(), transform.position);
-        }
+
     }
 
     private void OnMove(InputAction.CallbackContext ctx)
     {
         moveInput = ctx.ReadValue<Vector2>();
+    }
+
+    private void OnAttackEvent(InputAction.CallbackContext ctx)
+    {
+        OnAttack?.Invoke(currentWeaponIndex, GetMousePos(), transform.position);
     }
 
     private void OnCancelMove(InputAction.CallbackContext ctx)
@@ -108,24 +121,36 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         OnDashPressed?.Invoke(transform.position, moveInput, GetMousePos());
     }
 
+    private void ChangeWeapon(InputAction.CallbackContext ctx)
+    {
+        if (HasInputAuthority == false)
+        {
+            return;
+        }
+        var key = ctx.control.name; // ví dụ "1", "2", "3"
+
+        switch (key)
+        {
+            case "1":
+                currentWeaponIndex = 0;
+                OnChangeWeapon?.Invoke(0);
+                break;
+            case "2":
+                currentWeaponIndex = 1;
+                OnChangeWeapon?.Invoke(1);
+                break;
+            case "3":
+                currentWeaponIndex = 2;
+                OnChangeWeapon?.Invoke(2);
+                break;
+        }
+    }
+
     private Vector2 GetMousePos()
     {
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, 0));
         return (Vector2)mouseWorldPos;
-    }
-
-    public void OnInput(NetworkRunner runner, NetworkInput input)
-    {
-        // Called on the local owner to submit input to the runner
-        if (!HasInputAuthority) return;
-
-        input.Set(new PlayerNetworkInput
-        {
-            MoveDir = moveInput,
-            MousePosition = GetMousePos(),
-            CurrentPosition = transform.position
-        });
     }
 
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)

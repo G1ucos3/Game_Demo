@@ -1,34 +1,68 @@
 ﻿using Assets.Scripts.Domain;
+using Fusion;
 using UnityEngine;
 
-public class HitView : MonoBehaviour
+public class HitView : NetworkBehaviour
 {
     private float timeExisted = 0.5f;
     private WeaponController weaponController;
+    private float force = 15f;
+
+    [Networked]
+    public int WeaponIndex { get; set; }
+
+    [Networked]
+    private TickTimer LifeTimer { get; set; }
+
     public void Binding(WeaponController weaponController)
     {
         this.weaponController = weaponController;
     }   
-
-    void Update()
+    public void SetWeaponIndex(int index)
     {
-        if (timeExisted > 0)
+        WeaponIndex = index;
+        LifeTimer = TickTimer.CreateFromSeconds(Runner, timeExisted);
+    }
+
+    public override void Spawned()
+    {
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteRenderer.sprite = TempData.weaponObjectsInUse[WeaponIndex].hitSprite;
+        PolygonCollider2D polygon = this.gameObject.AddComponent<PolygonCollider2D>();
+        polygon.isTrigger = true;
+        if (Object.HasStateAuthority)
         {
-            timeExisted -= Time.deltaTime;
+            Debug.Log("Bay");
+            Rigidbody2D rigidbody = GetComponent<Rigidbody2D>();
+            rigidbody.AddForce(transform.right * force, ForceMode2D.Impulse);
         }
-        else
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        if (LifeTimer.Expired(Runner))
         {
-            Destroy(gameObject);
+            // CHỈ Host/Server mới được Despawn
+            if (Object.HasStateAuthority)
+            {
+                Runner.Despawn(Object); // LUÔN dùng Runner.Despawn
+            }
+            return;
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Enemy"))
+        if (Object.HasStateAuthority)
         {
-            Vector2 hitPoint = other.ClosestPoint(transform.position);
-            weaponController.OnHitEnemy(hitPoint);
-            Destroy(gameObject);
+            if (other.CompareTag("Enemy"))
+            {
+                // Xử lý sát thương (Nếu cần WeaponController)
+                Vector2 hitPoint = other.ClosestPoint(transform.position);
+                weaponController.OnHitEnemy(WeaponIndex ,hitPoint);
+
+                Runner.Despawn(Object); // Host hủy vật thể
+            }
         }
     }
 }
