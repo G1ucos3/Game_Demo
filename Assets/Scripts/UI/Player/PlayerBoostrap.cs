@@ -24,12 +24,16 @@ public class PlayerBoostrap : NetworkBehaviour
 
     void Start()
     {
+        
         playerController = new PlayerController();
         weaponController = new WeaponController();
 
         view.Bind(playerController, weaponController);
         weaponView.Bind(weaponController);
-        playerUICanvas.Bind(playerController, weaponInit);
+        if (HasInputAuthority)
+        {
+            playerUICanvas.Bind(playerController, weaponInit);
+        }
 
         input.OnMoveInput += playerController.HandleMove;
         input.OnDashPressed += playerController.HandleDash;

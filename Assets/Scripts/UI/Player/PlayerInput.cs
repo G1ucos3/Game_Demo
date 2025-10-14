@@ -157,11 +157,6 @@ public class PlayerInput : NetworkBehaviour, INetworkRunnerCallbacks
         return (Vector2)mouseWorldPos;
     }
 
-
-
-
-
-
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
     {
         

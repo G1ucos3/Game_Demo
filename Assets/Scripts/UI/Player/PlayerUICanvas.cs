@@ -72,8 +72,8 @@ public class PlayerUICanvas : MonoBehaviour
             imageSkillCooldown.fillAmount = elapsed / dashCooldown;
             yield return null;
         }
-
-        playerController.ResetDash();
+        Debug.Log("Reset dash UI");
+        this.playerController.ResetDash();
         imageSkillCooldown.fillAmount = 1f;
     }
 }

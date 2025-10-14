@@ -11,7 +11,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private NetworkRunner _runner;
 
     [SerializeField] private NetworkPrefabRef _playerPrefab;
-    private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
+    public static Dictionary<PlayerRef, NetworkObject> _playerRefs = new Dictionary<PlayerRef, NetworkObject>();
 
     private bool isSelectedRole = false;
 
@@ -57,7 +57,7 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
             if (networkPlayerObject != null)
             {
-                _spawnedCharacters.Add(player, networkPlayerObject);
+                _playerRefs.Add(player, networkPlayerObject);
 
                 runner.SetPlayerObject(player, networkPlayerObject);
             }
@@ -71,10 +71,10 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
-        if (_spawnedCharacters.TryGetValue(player, out NetworkObject networkObject))
+        if (_playerRefs.TryGetValue(player, out NetworkObject networkObject))
         {
             runner.Despawn(networkObject);
-            _spawnedCharacters.Remove(player);
+            _playerRefs.Remove(player);
         }
     }
 

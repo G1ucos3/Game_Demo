@@ -98,10 +98,33 @@ public class PlayerView : NetworkBehaviour
 
     private void HandleDashing(Vector2 targetPosition, float dashTime)
     {
-        StartCoroutine(LerpToTarget(targetPosition, dashTime));
+        Rpc_HandleDashing(targetPosition, dashTime);
+        StartCoroutine(CoolDownDashTime(dashTime));
     }
 
-    private IEnumerator LerpToTarget(Vector2 target, float dashtime)
+    private IEnumerator CoolDownDashTime(float dashTime)
+    {
+        yield return new WaitForSeconds(dashTime);
+        SendEventEndDash();
+    }
+
+    [Rpc(sources: RpcSources.InputAuthority, targets: RpcTargets.StateAuthority, HostMode = RpcHostMode.SourceIsHostPlayer)]
+    private void Rpc_HandleDashing(Vector2 targetPosition, float dashTime, RpcInfo info = default)
+    {
+        PlayerRef sender = info.Source;
+        if (!NetworkManager._playerRefs.TryGetValue(sender, out NetworkObject nPlayerObject))
+        {
+            Debug.LogWarning($"[RPC Server] Player cache missing for sender {sender}");
+            return;
+        }
+
+        GameObject playerObject = nPlayerObject.gameObject;
+        Rigidbody2D rigidbodyPlayer = playerObject.GetComponent<Rigidbody2D>();
+
+        StartCoroutine(LerpToTarget(rigidbodyPlayer, targetPosition, dashTime));
+    }
+
+    private IEnumerator LerpToTarget(Rigidbody2D rigidbodyPlayer, Vector2 target, float dashtime)
     {
         Vector2 start = rigidbodyPlayer.position;
         float elapsed = 0f;
@@ -112,20 +135,58 @@ public class PlayerView : NetworkBehaviour
             elapsed += Runner.DeltaTime;
             yield return null;
         }
-
         rigidbodyPlayer.MovePosition(target);
+    }
+
+    private void SendEventEndDash()
+    {
         playerController.EndDash();
     }
 
     private void HandleDashEnd()
     {
+        RPC_HandleDashEnd();
+    }
+    [Rpc(sources: RpcSources.InputAuthority, targets: RpcTargets.All, HostMode = RpcHostMode.SourceIsHostPlayer)]
+    private void RPC_HandleDashEnd(RpcInfo info = default)
+    {
+        PlayerRef sender = info.Source;
+        NetworkObject playerNetObject = Runner.GetPlayerObject(sender);
+
+        if (playerNetObject == null)
+        {
+            Debug.LogWarning($"[RPC Server] GetPlayerObject returned NULL for sender {sender}. The association was never made or was lost.");
+            return;
+        }
+
+        GameObject playerObject = playerNetObject.gameObject;
+        TrailRenderer trail = playerObject.GetComponent<TrailRenderer>();
         trail.emitting = false;
     }
 
+
     private void HandleDashStart()
     {
+        RPC_HandleDashStart();
+    }
+
+    [Rpc(sources: RpcSources.InputAuthority, targets: RpcTargets.All, HostMode = RpcHostMode.SourceIsHostPlayer)]
+    private void RPC_HandleDashStart(RpcInfo info = default)
+    {
+        PlayerRef sender = info.Source;
+        NetworkObject playerNetObject = Runner.GetPlayerObject(sender);
+
+        if (playerNetObject == null)
+        {
+            Debug.LogWarning($"[RPC Server] GetPlayerObject returned NULL for sender {sender}. The association was never made or was lost.");
+            return;
+        }
+
+        GameObject playerObject = playerNetObject.gameObject;
+        TrailRenderer trail = playerObject.GetComponent<TrailRenderer>();
         trail.emitting = true;
     }
+
     private void UseWeapon(WeaponObject weapon, int index)
     {
         Rpc_RequestChangeWeapon(index);

@@ -17,7 +17,7 @@ public class PlayerController
     private bool canMove = true;
     private bool isDashing  = false;
     private float dashDistance = 3f;
-    private float dashTime = 0.5f;
+    private float dashTime = 0.1f;
     private float dashCooldown = 1f;
     private float moveSpeed = 5f;
 
@@ -51,7 +51,11 @@ public class PlayerController
 
     public void HandleDash(Vector2 currentPosition, Vector2 moveInput, Vector2? mouseWorldPos = null)
     {
-        if (!canDash || isDashing) return;
+        if (!canDash || isDashing)
+        {
+            Debug.Log("Can dash" + canDash + " isDashingz" + isDashing);
+            return;
+        }
 
         Vector2 dashDirection;
         if (moveInput == Vector2.zero)
@@ -82,13 +86,14 @@ public class PlayerController
     public void EndDash()
     {
         canMove = true;
+        isDashing = false;
         OnDashEnd?.Invoke();
     }
 
     public void ResetDash()
     {
+        Debug.Log("Reset dash");
         canDash = true;
-        isDashing = false;
     }
 
     public void HandleChangeWeapon(int weaponIndex)
