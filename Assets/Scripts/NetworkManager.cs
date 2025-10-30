@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using static Unity.Collections.Unicode;
 
 public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 {
@@ -61,11 +62,34 @@ public class NetworkManager : MonoBehaviour, INetworkRunnerCallbacks
 
                 runner.SetPlayerObject(player, networkPlayerObject);
             }
+            
             else
             {
                 // Log 4: Báo lỗi nếu spawn thất bại
                 Debug.LogError($"[NetworkManager] Failed to spawn prefab for player: {player}.");
             }
+        }
+    }
+
+    private void Update()
+    {
+        if (_runner.IsServer)
+        {
+            string allPings = "Player Pings (RTT):\n";
+
+            // Lặp qua tất cả người chơi đang hoạt động trong phòng
+            foreach (var p in _runner.ActivePlayers)
+            {
+                // Lấy RTT của người chơi đó
+                double rtt = _runner.GetPlayerRtt(p);
+
+                // Lấy Ping (một nửa RTT)
+                int ping = (int)(rtt * 1000 / 2); // Chuyển từ giây sang ms và chia 2
+
+                allPings += $"Player {p.PlayerId}: {ping} ms (RTT: {rtt * 1000:F0} ms)\n";
+            }
+
+            Debug.Log(allPings);
         }
     }
 
